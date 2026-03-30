@@ -134,14 +134,14 @@ def apply_styles():
         border-right: none;
     }
     [data-testid="stSidebar"] * {
-        color: #950F54 !important;
+        color: #1C1C2E !important;
     }
     [data-testid="stSidebar"] .stRadio label {
-        color: #950F54 !important;
+        color: #1C1C2E !important;
         font-weight: 500;
     }
     [data-testid="stSidebarNav"] a {
-        color: #950F54 !important;
+        color: #1C1C2E !important;
         font-weight: 500;
         border-radius: 8px;
         padding: 6px 12px;
@@ -191,7 +191,7 @@ def apply_styles():
     [data-testid="stSidebar"] .stRadio label,
     [data-testid="stSidebar"] .stRadio label p,
     [data-testid="stSidebar"] .stRadio label span {
-        color: #950F54 !important;
+        color: #1C1C2E !important;
         font-weight: 500 !important;
     }
 
