@@ -130,18 +130,18 @@ def apply_styles():
 
     /* ── Sidebar ── */
     [data-testid="stSidebar"] {
-        background: #EA288D !important;
+        background: #F494C6 !important;
         border-right: none;
     }
     [data-testid="stSidebar"] * {
-        color: #F5E6FF !important;
+        color: #950F54 !important;
     }
     [data-testid="stSidebar"] .stRadio label {
-        color: #F5E6FF !important;
+        color: #950F54 !important;
         font-weight: 500;
     }
     [data-testid="stSidebarNav"] a {
-        color: #F5E6FF !important;
+        color: #950F54 !important;
         font-weight: 500;
         border-radius: 8px;
         padding: 6px 12px;
@@ -191,7 +191,7 @@ def apply_styles():
     [data-testid="stSidebar"] .stRadio label,
     [data-testid="stSidebar"] .stRadio label p,
     [data-testid="stSidebar"] .stRadio label span {
-        color: #F5E6FF !important;
+        color: #950F54 !important;
         font-weight: 500 !important;
     }
 
