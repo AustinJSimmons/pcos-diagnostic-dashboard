@@ -8,7 +8,6 @@ from styles import apply_styles
 
 st.set_page_config(
     page_title="PCOS Diagnostic Dashboard",
-    page_icon="🏥",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -18,9 +17,7 @@ apply_styles()
 # Title — emoji separated from gradient span so it renders correctly
 st.markdown(
     '<p style="font-size:2.4rem; font-weight:700; margin-bottom:4px;">'
-    '🏥 <span style="background:linear-gradient(90deg,#C2185B,#7B1FA2);'
-    '-webkit-background-clip:text;-webkit-text-fill-color:transparent;'
-    'background-clip:text;">PCOS Diagnostic Dashboard</span></p>',
+    '<span style="color:#EA288D;">PCOS Diagnostic Dashboard</span></p>',
     unsafe_allow_html=True
 )
 st.markdown(
@@ -111,33 +108,33 @@ guide_col1, guide_col2, guide_col3 = st.columns(3)
 
 with guide_col1:
     st.markdown("""
-    #### 🔍 Phenotype Explorer
+    #### Phenotype Explorer
     Analyze clustering results and explore distinct PCOS phenotypes:
     - View 2D PCA projection of clusters
     - Compare phenotype characteristics
     - Understand metabolic vs hormonal presentations
     """)
-    st.page_link("pages/1_Phenotype_Explorer.py", label="Open Phenotype Explorer →", icon="🔍")
+    st.page_link("pages/1_Phenotype_Explorer.py", label="Open Phenotype Explorer →")
 
 with guide_col2:
     st.markdown("""
-    #### 📊 Risk Calculator
+    #### Risk Calculator
     Calculate PCOS risk based on patient input:
     - Choose between Logistic Regression and XGBoost
     - Full clinical model or non-invasive screening model
     - Get personalized risk score and recommendations
     """)
-    st.page_link("pages/2_Risk_Calculator.py", label="Open Risk Calculator →", icon="📊")
+    st.page_link("pages/2_Risk_Calculator.py", label="Open Risk Calculator →")
 
 with guide_col3:
     st.markdown("""
-    #### 💡 Feature Impact
+    #### Feature Impact
     Visualize feature importance and compare models:
     - Feature rankings by model coefficient and mutual information
     - Logistic Regression vs XGBoost comparison
     - Full vs non-invasive feature set performance
     """)
-    st.page_link("pages/3_Feature_Impact.py", label="Open Feature Impact →", icon="💡")
+    st.page_link("pages/3_Feature_Impact.py", label="Open Feature Impact →")
 
 st.divider()
 

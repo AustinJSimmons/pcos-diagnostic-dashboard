@@ -14,7 +14,6 @@ from styles import apply_styles, style_fig
 
 st.set_page_config(
     page_title="Phenotype Explorer",
-    page_icon="🔍",
     layout="wide"
 )
 
@@ -22,9 +21,7 @@ apply_styles()
 
 st.markdown(
     '<p style="font-size:2.4rem; font-weight:700; margin-bottom:4px;">'
-    '🔍 <span style="background:linear-gradient(90deg,#C2185B,#7B1FA2);'
-    '-webkit-background-clip:text;-webkit-text-fill-color:transparent;'
-    'background-clip:text;">PCOS Phenotype Explorer</span></p>',
+    '<span style="color:#EA288D;">PCOS Phenotype Explorer</span></p>',
     unsafe_allow_html=True
 )
 st.markdown("Discover distinct PCOS phenotypes and their clinical characteristics")
@@ -122,10 +119,10 @@ try:
         pheno_names = {0: "Lean PCOS", 1: "Metabolic PCOS"}
         pheno_desc  = {0: "Lower BMI, leaner profile with similar follicle counts",
                        1: "Higher BMI, weight & metabolic markers"}
-    pheno_colors_map = {0: '#E91E8C', 1: '#7B1FA2'}
+    pheno_colors_map = {0: '#EA288D', 1: '#950F54'}
 
     # Sidebar controls
-    st.sidebar.markdown("### 🎛️ Visualization Controls")
+    st.sidebar.markdown("### Visualization Controls")
     view_mode = st.sidebar.radio("Select View", ["Overview", "Detailed Comparison", "Feature Deep-Dive", "Classify Patient"])
     pheno_count_0 = (clusters == 0).sum()
     pheno_count_1 = (clusters == 1).sum()
@@ -135,12 +132,12 @@ try:
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            st.markdown("### 🗺️ Phenotype Clustering (PCA Projection)")
+            st.markdown("### Phenotype Clustering (PCA Projection)")
             st.markdown("*Click below to explore how PCOS patients naturally group by clinical features*")
             
             # Create scatter plot with better styling
             fig, ax = plt.subplots(figsize=(10, 7))
-            pheno_colors = ['#E91E8C', '#7B1FA2']
+            pheno_colors = ['#EA288D', '#950F54']
             
             for pheno in [0, 1]:
                 mask = clusters == pheno
@@ -169,11 +166,11 @@ try:
             st.pyplot(fig, use_container_width=True)
 
         with col2:
-            st.markdown("### 📊 Population Distribution")
+            st.markdown("### Population Distribution")
 
             phenotype_counts = [pheno_count_0, pheno_count_1]
             fig, ax = plt.subplots(figsize=(7, 6))
-            colors = ['#E91E8C', '#7B1FA2']
+            colors = ['#EA288D', '#950F54']
             wedges, texts, autotexts = ax.pie(phenotype_counts,
                                               labels=[f'{pheno_names[0]}\n(n={phenotype_counts[0]})',
                                                       f'{pheno_names[1]}\n(n={phenotype_counts[1]})'],
@@ -191,7 +188,7 @@ try:
         
         # Phenotype characteristics cards
         st.divider()
-        st.markdown("### 🏥 Phenotype Characteristics at a Glance")
+        st.markdown("### Phenotype Characteristics at a Glance")
         
         # Top differentiating features
         top_diff_features = effect_df.head(6)['feature'].tolist()
@@ -225,7 +222,7 @@ try:
                 st.markdown(char_text)
     
     elif view_mode == "Detailed Comparison":
-        st.markdown("### 🔬 Detailed Phenotype Comparison")
+        st.markdown("### Detailed Phenotype Comparison")
         st.markdown("*Click a feature to highlight the key differences between phenotypes*")
         
         # Top differentiating features table
@@ -241,7 +238,7 @@ try:
             
             x_pos = np.arange(len(comparison_features))
             effect_values = comparison_features['cohens_d'].values
-            colors_effects = ['#C2185B' if x > 0 else '#7B1FA2' for x in effect_values]
+            colors_effects = ['#EA288D' if x > 0 else '#950F54' for x in effect_values]
             
             bars = ax.barh(x_pos, effect_values, color=colors_effects, alpha=0.8, edgecolor='black', linewidth=1.5)
             
@@ -291,7 +288,7 @@ try:
         st.dataframe(comparison_table_df, use_container_width=True, hide_index=True)
     
     elif view_mode == "Feature Deep-Dive":
-        st.markdown("### 🔍 Feature Deep-Dive Analysis")
+        st.markdown("### Feature Deep-Dive Analysis")
         
         # Feature selector
         selected_feature = st.selectbox("Select Feature to Compare",
@@ -313,7 +310,7 @@ try:
             
             # Customize violin plot colors
             for pc in parts['bodies']:
-                pc.set_facecolor('#E91E8C')
+                pc.set_facecolor('#EA288D')
                 pc.set_alpha(0.6)
             
             ax.set_xticks([0, 1])
@@ -352,15 +349,15 @@ try:
             st.metric("P-Value", f"{p_val:.4f}")
             
             if p_val < 0.05:
-                st.success("✅ Significantly Different")
+                st.success("Significantly Different")
             else:
-                st.info("ℹ️ No significant difference")
+                st.info("No significant difference")
             
             mean_diff_pct = abs(data_p1.mean() - data_p0.mean()) / data_p0.mean() * 100
             st.metric("% Difference", f"{mean_diff_pct:.1f}%")
 
     elif view_mode == "Classify Patient":
-        st.markdown("### 🧬 Classify a New Patient")
+        st.markdown("### Classify a New Patient")
         st.markdown("Enter a patient's clinical values to see which PCOS phenotype they most resemble.")
 
         st.divider()
@@ -405,7 +402,7 @@ try:
                 c_afr  = st.number_input("Avg Follicle Size R (mm)", 0.0, 30.0, 15.0, key="c_afr")
             c_endo = st.number_input("Endometrium (mm)", 0.0, 20.0, 8.0, key="c_endo")
 
-        if st.button("🔬 Classify Patient", use_container_width=True):
+        if st.button("Classify Patient", use_container_width=True):
             patient_vals = [c_age, c_wt, c_ht, c_bmi, c_pulse, c_rr, c_hb, c_cycle,
                             c_fsh, c_lh, c_fsh_lh, c_hip, c_waist, c_whr, c_tsh,
                             c_amh, c_prl, c_vitd, c_prg, c_rbs, c_bps, c_bpd,
@@ -464,7 +461,7 @@ try:
                 # Patient point
                 ax.scatter(patient_pca[0, 0], patient_pca[0, 1],
                           c='gold', marker='*', s=600,
-                          edgecolors='#C2185B', linewidth=2, zorder=10,
+                          edgecolors='#EA288D', linewidth=2, zorder=10,
                           label='This Patient')
 
                 ax.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.1%} variance)', fontsize=11)
@@ -476,6 +473,6 @@ try:
                 st.pyplot(fig, use_container_width=True)
 
 except Exception as e:
-    st.error("❌ Error Loading Phenotype Data")
+    st.error("Error Loading Phenotype Data")
     st.error(f"Could not load or process clustering data: {str(e)}")
     st.info("Make sure the cleaned data file exists at: `data/processed/cleaned_data.csv`")

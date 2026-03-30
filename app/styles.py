@@ -8,11 +8,11 @@ def apply_mpl_theme():
     mpl.rcParams.update({
         'figure.facecolor': 'none',       # transparent — blends with page bg
         'axes.facecolor': '#FDF0F8',       # very soft pink axes area
-        'axes.edgecolor': '#E8D0F0',
+        'axes.edgecolor': '#F494C6',
         'axes.spines.top': False,
         'axes.spines.right': False,
-        'axes.labelcolor': '#3D1A5C',
-        'axes.titlecolor': '#6A0572',
+        'axes.labelcolor': '#950F54',
+        'axes.titlecolor': '#950F54',
         'axes.titleweight': 'bold',
         'axes.titlesize': 13,
         'axes.labelsize': 11,
@@ -21,11 +21,11 @@ def apply_mpl_theme():
         'ytick.color': '#666',
         'xtick.labelsize': 10,
         'ytick.labelsize': 10,
-        'grid.color': '#EDD6F5',
+        'grid.color': '#F494C6',
         'grid.linestyle': '--',
         'grid.alpha': 0.5,
         'legend.framealpha': 0.9,
-        'legend.edgecolor': '#E8D0F0',
+        'legend.edgecolor': '#F494C6',
         'legend.fontsize': 10,
         'figure.autolayout': False,
         'font.family': 'DejaVu Sans',
@@ -63,7 +63,7 @@ def apply_styles():
         font-family: 'Inter', sans-serif;
     }
     .stApp {
-        background: linear-gradient(145deg, #FDF4F8 0%, #F5EEFF 100%);
+        background: #FDF4F8;
     }
 
     /* ── Hide default Streamlit branding ── */
@@ -75,12 +75,12 @@ def apply_styles():
         font-weight: 700 !important;
         font-size: 2.2rem !important;
         margin-bottom: 0.2rem !important;
-        color: #6A0572 !important;
+        color: #950F54 !important;
     }
 
     /* ── Section headers ── */
     h2, h3 {
-        color: #6A0572 !important;
+        color: #950F54 !important;
         font-weight: 600 !important;
     }
 
@@ -89,7 +89,7 @@ def apply_styles():
         background: #FFFFFF;
         border-radius: 18px;
         padding: 12px;
-        box-shadow: 0 4px 24px rgba(194, 24, 91, 0.09);
+        box-shadow: 0 4px 24px rgba(234, 40, 141, 0.09);
         overflow: hidden;
     }
     [data-testid="stImage"] img {
@@ -108,12 +108,12 @@ def apply_styles():
         background: #FFFFFF;
         border-radius: 14px;
         padding: 18px 20px;
-        box-shadow: 0 2px 12px rgba(194, 24, 91, 0.08);
-        border-left: 4px solid #C2185B;
+        box-shadow: 0 2px 12px rgba(234, 40, 141, 0.08);
+        border-left: 4px solid #EA288D;
         transition: box-shadow 0.2s;
     }
     [data-testid="stMetric"]:hover {
-        box-shadow: 0 4px 20px rgba(194, 24, 91, 0.15);
+        box-shadow: 0 4px 20px rgba(234, 40, 141, 0.15);
     }
     [data-testid="stMetricLabel"] {
         color: #888 !important;
@@ -130,7 +130,7 @@ def apply_styles():
 
     /* ── Sidebar ── */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #E91E8C 0%, #F06292 50%, #F8BBD9 100%) !important;
+        background: #EA288D !important;
         border-right: none;
     }
     [data-testid="stSidebar"] * {
@@ -158,7 +158,7 @@ def apply_styles():
 
     /* ── Buttons ── */
     .stButton > button {
-        background: linear-gradient(135deg, #C2185B, #7B1FA2);
+        background: #EA288D;
         color: white !important;
         border: none;
         border-radius: 25px;
@@ -167,7 +167,7 @@ def apply_styles():
         font-size: 0.95rem;
         letter-spacing: 0.03em;
         transition: opacity 0.2s, transform 0.1s;
-        box-shadow: 0 4px 14px rgba(194, 24, 91, 0.3);
+        box-shadow: 0 4px 14px rgba(234, 40, 141, 0.3);
     }
     .stButton > button:hover {
         opacity: 0.9;
@@ -257,16 +257,13 @@ def apply_styles():
         margin-bottom: 16px;
     }
     .gradient-text {
-        background: linear-gradient(90deg, #C2185B, #7B1FA2);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
+        color: #EA288D;
         font-weight: 700;
     }
     .stat-pill {
         display: inline-block;
-        background: linear-gradient(135deg, #FCE4EC, #F3E5F5);
-        color: #6A0572;
+        background: #F494C6;
+        color: #950F54;
         border-radius: 20px;
         padding: 4px 14px;
         font-size: 0.85rem;

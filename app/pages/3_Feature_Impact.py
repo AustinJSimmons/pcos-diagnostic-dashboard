@@ -14,7 +14,6 @@ from styles import apply_styles, style_fig
 
 st.set_page_config(
     page_title="Feature Impact Analysis",
-    page_icon="💡",
     layout="wide"
 )
 
@@ -22,9 +21,7 @@ apply_styles()
 
 st.markdown(
     '<p style="font-size:2.4rem; font-weight:700; margin-bottom:4px;">'
-    '💡 <span style="background:linear-gradient(90deg,#C2185B,#7B1FA2);'
-    '-webkit-background-clip:text;-webkit-text-fill-color:transparent;'
-    'background-clip:text;">Feature Impact & Analysis</span></p>',
+    '<span style="color:#EA288D;">Feature Impact & Analysis</span></p>',
     unsafe_allow_html=True
 )
 st.markdown("Visualize which factors most influence PCOS diagnosis")
@@ -91,11 +88,11 @@ def run_model_comparison():
 try:
     df, X, y, numerical_cols, feature_importance, model = load_and_analyze()
 except FileNotFoundError:
-    st.error("❌ Data Loading Error")
+    st.error("Data Loading Error")
     st.error("Could not find the required data file: `data/processed/cleaned_data.csv`")
     st.stop()
 except Exception as e:
-    st.error("❌ Analysis Error")
+    st.error("Analysis Error")
     st.error(f"Failed to perform feature impact analysis: {str(e)}")
     st.stop()
 
@@ -255,7 +252,7 @@ elif analysis_type == 'Model Comparison':
     algorithms = comparison_df['Algorithm'].unique()
     x = np.arange(len(feature_sets))
     width = 0.35
-    algo_colors = {'Logistic Regression': '#C2185B', 'XGBoost': '#7B1FA2'}
+    algo_colors = {'Logistic Regression': '#EA288D', 'XGBoost': '#950F54'}
 
     for ax, metric in zip(axes, metrics):
         for i, algo in enumerate(algorithms):

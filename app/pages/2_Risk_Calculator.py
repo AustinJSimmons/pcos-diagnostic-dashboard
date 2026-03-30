@@ -12,7 +12,6 @@ from styles import apply_styles, style_fig
 
 st.set_page_config(
     page_title="PCOS Risk Calculator",
-    page_icon="📊",
     layout="wide"
 )
 
@@ -20,9 +19,7 @@ apply_styles()
 
 st.markdown(
     '<p style="font-size:2.4rem; font-weight:700; margin-bottom:4px;">'
-    '📊 <span style="background:linear-gradient(90deg,#C2185B,#7B1FA2);'
-    '-webkit-background-clip:text;-webkit-text-fill-color:transparent;'
-    'background-clip:text;">PCOS Risk Screening Calculator</span></p>',
+    '<span style="color:#EA288D;">PCOS Risk Screening Calculator</span></p>',
     unsafe_allow_html=True
 )
 st.markdown("Calculate personalized PCOS risk based on clinical indicators")
@@ -97,11 +94,11 @@ def train_models():
 try:
     models_dict = train_models()
 except FileNotFoundError:
-    st.error("❌ Data Loading Error")
+    st.error("Data Loading Error")
     st.error("Could not find the required data file: `data/processed/cleaned_data.csv`")
     st.stop()
 except Exception as e:
-    st.error("❌ Model Training Error")
+    st.error("Model Training Error")
     st.error(f"Failed to train the risk assessment models: {str(e)}")
     st.stop()
 
@@ -194,7 +191,7 @@ with col3:
 st.divider()
 
 # --- Calculate button ---
-if st.button("🔍 Calculate Risk Score", use_container_width=True):
+if st.button("Calculate Risk Score", use_container_width=True):
     st.session_state['show_results'] = True
     st.session_state['last_model_label'] = model_type_label
     if feature_set == 'Full Model':
@@ -253,11 +250,11 @@ col1, col2 = st.columns(2)
 
 with col1:
     if risk_prob < 0.25:
-        risk_level = "🟢 Low Risk"
+        risk_level = "Low Risk"
     elif risk_prob < 0.75:
-        risk_level = "🟡 Medium Risk"
+        risk_level = "Medium Risk"
     else:
-        risk_level = "🔴 High Risk"
+        risk_level = "High Risk"
 
     st.metric("PCOS Risk Level", risk_level)
     st.metric("Risk Probability", f"{risk_prob*100:.1f}%")
@@ -306,7 +303,7 @@ else:
                 "Pink bars push risk up; purple bars push risk down.*")
 
 top_contribs = _patient_contribs.head(9)
-bar_colors = ['#C2185B' if v > 0 else '#7B1FA2' for v in top_contribs['Contribution']]
+bar_colors = ['#EA288D' if v > 0 else '#950F54' for v in top_contribs['Contribution']]
 
 col1, col2 = st.columns([1, 2])
 
@@ -336,50 +333,50 @@ recommendations = []
 inp = _inputs
 
 if inp['bmi'] > 25:
-    recommendations.append("⚠️ **Overweight status**: Increases metabolic PCOS risk — consider weight management")
+    recommendations.append("**Overweight status**: Increases metabolic PCOS risk — consider weight management")
 if inp['pulse'] > 90:
-    recommendations.append("⚠️ **Elevated resting heart rate**: May indicate metabolic stress or insulin resistance")
+    recommendations.append("**Elevated resting heart rate**: May indicate metabolic stress or insulin resistance")
 if inp['bp_sys'] > 130 or inp['bp_dia'] > 85:
-    recommendations.append("⚠️ **Elevated blood pressure**: Associated with metabolic syndrome and PCOS")
+    recommendations.append("**Elevated blood pressure**: Associated with metabolic syndrome and PCOS")
 if inp['cycle'] < 21 or inp['cycle'] > 35:
-    recommendations.append("⚠️ **Irregular menstrual cycle**: Common PCOS indicator — track cycle patterns")
+    recommendations.append("**Irregular menstrual cycle**: Common PCOS indicator — track cycle patterns")
 
 if _feature_set == 'Full Model':
     if inp['follicle_r'] and inp['follicle_l'] and (inp['follicle_r'] + inp['follicle_l']) > 20:
-        recommendations.append("⚠️ **High follicle count**: Polycystic ovary morphology — key PCOS diagnostic feature")
+        recommendations.append("**High follicle count**: Polycystic ovary morphology — key PCOS diagnostic feature")
     if inp['amh'] and inp['amh'] > 7:
-        recommendations.append("⚠️ **Elevated AMH**: Increased ovarian reserve — common in PCOS")
+        recommendations.append("**Elevated AMH**: Increased ovarian reserve — common in PCOS")
     if inp['lh'] and inp['fsh'] and inp['lh'] / (inp['fsh'] + 0.1) > 2:
-        recommendations.append("⚠️ **Elevated LH/FSH ratio**: Hormonal imbalance typical of PCOS (>3 highly suggestive)")
+        recommendations.append("**Elevated LH/FSH ratio**: Hormonal imbalance typical of PCOS (>3 highly suggestive)")
 else:
     symptom_count = sum(int(bool(inp[k])) for k in ['weight_gain', 'hair_growth', 'skin_darkening', 'hair_loss', 'pimples'])
     if inp['weight_gain']:
-        recommendations.append("⚠️ **Weight gain**: Suggests possible insulin resistance — core PCOS feature")
+        recommendations.append("**Weight gain**: Suggests possible insulin resistance — core PCOS feature")
     if inp['hair_growth']:
-        recommendations.append("⚠️ **Hirsutism**: Sign of androgen excess typical of PCOS")
+        recommendations.append("**Hirsutism**: Sign of androgen excess typical of PCOS")
     if inp['skin_darkening']:
-        recommendations.append("⚠️ **Skin darkening**: May indicate insulin resistance (acanthosis nigricans)")
+        recommendations.append("**Skin darkening**: May indicate insulin resistance (acanthosis nigricans)")
     if inp['hair_loss']:
-        recommendations.append("⚠️ **Hair loss**: Indicates elevated androgens — common PCOS symptom")
+        recommendations.append("**Hair loss**: Indicates elevated androgens — common PCOS symptom")
     if inp['pimples']:
-        recommendations.append("⚠️ **Acne/pimples**: Sign of hormonal imbalance")
+        recommendations.append("**Acne/pimples**: Sign of hormonal imbalance")
     if symptom_count >= 3:
-        recommendations.append("🔴 **Multiple PCOS symptoms**: Strong indicator — clinical evaluation recommended")
+        recommendations.append("**Multiple PCOS symptoms**: Strong indicator — clinical evaluation recommended")
     if not inp['fast_food'] and inp['exercise']:
-        recommendations.append("✅ **Good lifestyle factors**: Regular exercise and healthy diet support PCOS management")
+        recommendations.append("**Good lifestyle factors**: Regular exercise and healthy diet support PCOS management")
 
 if risk_prob > 0.75:
     if _feature_set == 'Full Model':
-        recommendations.append("🔴 **High risk**: Recommend comprehensive PCOS evaluation by endocrinologist")
+        recommendations.append("**High risk**: Recommend comprehensive PCOS evaluation by endocrinologist")
     else:
-        recommendations.append("🔴 **High risk**: Non-invasive screening suggests PCOS — recommend clinical evaluation with blood tests & ultrasound")
+        recommendations.append("**High risk**: Non-invasive screening suggests PCOS — recommend clinical evaluation with blood tests & ultrasound")
 elif risk_prob > 0.25:
     if _feature_set == 'Full Model':
-        recommendations.append("🟡 **Medium risk**: Monitor for PCOS symptoms and hormonal markers — consider repeat testing")
+        recommendations.append("**Medium risk**: Monitor for PCOS symptoms and hormonal markers — consider repeat testing")
     else:
-        recommendations.append("🟡 **Medium risk**: Additional testing recommended — consider bloodwork and pelvic ultrasound")
+        recommendations.append("**Medium risk**: Additional testing recommended — consider bloodwork and pelvic ultrasound")
 else:
-    recommendations.append("🟢 **Low risk**: Current indicators suggest low PCOS probability — routine monitoring suggested")
+    recommendations.append("**Low risk**: Current indicators suggest low PCOS probability — routine monitoring suggested")
 
 for rec in recommendations:
     st.markdown(f"- {rec}")
