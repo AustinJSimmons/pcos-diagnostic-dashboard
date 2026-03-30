@@ -303,7 +303,7 @@ else:
                 "Pink bars push risk up; purple bars push risk down.*")
 
 top_contribs = _patient_contribs.head(9)
-bar_colors = ['#EA288D' if v > 0 else '#950F54' for v in top_contribs['Contribution']]
+bar_colors = ['#C2185B' if v > 0 else '#7B1FA2' for v in top_contribs['Contribution']]
 
 col1, col2 = st.columns([1, 2])
 

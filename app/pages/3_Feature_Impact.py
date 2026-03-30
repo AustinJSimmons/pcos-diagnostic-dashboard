@@ -252,7 +252,7 @@ elif analysis_type == 'Model Comparison':
     algorithms = comparison_df['Algorithm'].unique()
     x = np.arange(len(feature_sets))
     width = 0.35
-    algo_colors = {'Logistic Regression': '#EA288D', 'XGBoost': '#950F54'}
+    algo_colors = {'Logistic Regression': '#C2185B', 'XGBoost': '#7B1FA2'}
 
     for ax, metric in zip(axes, metrics):
         for i, algo in enumerate(algorithms):

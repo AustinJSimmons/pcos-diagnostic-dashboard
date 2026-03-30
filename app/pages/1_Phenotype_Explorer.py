@@ -119,7 +119,7 @@ try:
         pheno_names = {0: "Lean PCOS", 1: "Metabolic PCOS"}
         pheno_desc  = {0: "Lower BMI, leaner profile with similar follicle counts",
                        1: "Higher BMI, weight & metabolic markers"}
-    pheno_colors_map = {0: '#EA288D', 1: '#950F54'}
+    pheno_colors_map = {0: '#E91E8C', 1: '#7B1FA2'}
 
     # Sidebar controls
     st.sidebar.markdown("### Visualization Controls")
@@ -137,7 +137,7 @@ try:
             
             # Create scatter plot with better styling
             fig, ax = plt.subplots(figsize=(10, 7))
-            pheno_colors = ['#EA288D', '#950F54']
+            pheno_colors = ['#E91E8C', '#7B1FA2']
             
             for pheno in [0, 1]:
                 mask = clusters == pheno
@@ -170,7 +170,7 @@ try:
 
             phenotype_counts = [pheno_count_0, pheno_count_1]
             fig, ax = plt.subplots(figsize=(7, 6))
-            colors = ['#EA288D', '#950F54']
+            colors = ['#E91E8C', '#7B1FA2']
             wedges, texts, autotexts = ax.pie(phenotype_counts,
                                               labels=[f'{pheno_names[0]}\n(n={phenotype_counts[0]})',
                                                       f'{pheno_names[1]}\n(n={phenotype_counts[1]})'],
@@ -238,7 +238,7 @@ try:
             
             x_pos = np.arange(len(comparison_features))
             effect_values = comparison_features['cohens_d'].values
-            colors_effects = ['#EA288D' if x > 0 else '#950F54' for x in effect_values]
+            colors_effects = ['#C2185B' if x > 0 else '#7B1FA2' for x in effect_values]
             
             bars = ax.barh(x_pos, effect_values, color=colors_effects, alpha=0.8, edgecolor='black', linewidth=1.5)
             
@@ -310,7 +310,7 @@ try:
             
             # Customize violin plot colors
             for pc in parts['bodies']:
-                pc.set_facecolor('#EA288D')
+                pc.set_facecolor('#E91E8C')
                 pc.set_alpha(0.6)
             
             ax.set_xticks([0, 1])
@@ -461,7 +461,7 @@ try:
                 # Patient point
                 ax.scatter(patient_pca[0, 0], patient_pca[0, 1],
                           c='gold', marker='*', s=600,
-                          edgecolors='#EA288D', linewidth=2, zorder=10,
+                          edgecolors='#C2185B', linewidth=2, zorder=10,
                           label='This Patient')
 
                 ax.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.1%} variance)', fontsize=11)

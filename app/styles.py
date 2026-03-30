@@ -8,11 +8,11 @@ def apply_mpl_theme():
     mpl.rcParams.update({
         'figure.facecolor': 'none',       # transparent — blends with page bg
         'axes.facecolor': '#FDF0F8',       # very soft pink axes area
-        'axes.edgecolor': '#F494C6',
+        'axes.edgecolor': '#E8D0F0',
         'axes.spines.top': False,
         'axes.spines.right': False,
-        'axes.labelcolor': '#950F54',
-        'axes.titlecolor': '#950F54',
+        'axes.labelcolor': '#3D1A5C',
+        'axes.titlecolor': '#6A0572',
         'axes.titleweight': 'bold',
         'axes.titlesize': 13,
         'axes.labelsize': 11,
@@ -21,11 +21,11 @@ def apply_mpl_theme():
         'ytick.color': '#666',
         'xtick.labelsize': 10,
         'ytick.labelsize': 10,
-        'grid.color': '#F494C6',
+        'grid.color': '#EDD6F5',
         'grid.linestyle': '--',
         'grid.alpha': 0.5,
         'legend.framealpha': 0.9,
-        'legend.edgecolor': '#F494C6',
+        'legend.edgecolor': '#E8D0F0',
         'legend.fontsize': 10,
         'figure.autolayout': False,
         'font.family': 'DejaVu Sans',
