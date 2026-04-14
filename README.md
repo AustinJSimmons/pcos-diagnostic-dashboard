@@ -60,25 +60,34 @@ The dashboard will open at `http://localhost:8501`
 ## Project Structure
 
 ```
-├── app/                    # Streamlit application
-│   ├── Home.py            # Main dashboard
-│   └── pages/             # Feature pages
+├── app/                        # Streamlit application
+│   ├── Home.py                 # Main dashboard
+│   ├── styles.py               # Shared styles and matplotlib theme
+│   └── pages/                  # Feature pages
 │       ├── 1_Phenotype_Explorer.py
 │       ├── 2_Risk_Calculator.py
 │       └── 3_Feature_Impact.py
-├── src/                   # Core utilities
-│   ├── preprocessing.py   # Data cleaning
-│   └── model_training.py  # ML models
+├── src/                        # Core utilities
+│   ├── init.py
+│   ├── preprocessing.py        # Data cleaning
+│   └── model_training.py       # ML models
 ├── data/
-│   ├── raw/              # Original PCOS datasets
-│   └── processed/        # Cleaned data (cleaned_data.csv)
-├── notebooks/            # Analysis notebooks
+│   ├── raw/                    # Original PCOS datasets
+│   └── processed/              # Cleaned data (cleaned_data.csv)
+├── notebooks/                  # Analysis notebooks
 │   ├── 01-data-cleaning.ipynb
 │   ├── 02-eda-pca.ipynb
 │   ├── 03-xgboost-shap.ipynb
 │   ├── 04-eda-classifier.ipynb
 │   └── 05-clustering.ipynb
-└── docs/                 # Documentation
+├── tests/
+│   └── test_dashboard.py       # Core logic tests
+├── docs/
+│   └── index.html              # Generated documentation
+├── generate_docs.py            # Documentation generator
+├── requirements.txt
+├── run_dashboard.sh
+└── run_dashboard.bat
 ```
 
 ## Data

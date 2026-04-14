@@ -8,14 +8,22 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from scipy.stats import ttest_ind
+import sys
+sys.path.append(str(Path(__file__).parent.parent))
+from styles import apply_styles, style_fig
 
 st.set_page_config(
     page_title="Phenotype Explorer",
-    page_icon="🔍",
     layout="wide"
 )
 
-st.title("🔍 PCOS Phenotype Explorer")
+apply_styles()
+
+st.markdown(
+    '<p style="font-size:2.4rem; font-weight:700; margin-bottom:4px;">'
+    '<span style="color:#EA288D;">PCOS Phenotype Explorer</span></p>',
+    unsafe_allow_html=True
+)
 st.markdown("Discover distinct PCOS phenotypes and their clinical characteristics")
 
 # Load data
@@ -99,10 +107,23 @@ try:
     df = load_data()
     df_pcos, clusters, X_pca, pca, kmeans, X_pcos_scaled, numerical_cols = perform_clustering(df)
     effect_df, pheno0, pheno1 = identify_differentiating_features(df_pcos, clusters, numerical_cols, top_n=10)
-    
+
+    # Dynamically assign phenotype names based on BMI (higher BMI = Metabolic)
+    bmi_0 = df_pcos[clusters == 0]['bmi'].mean()
+    bmi_1 = df_pcos[clusters == 1]['bmi'].mean()
+    if bmi_0 > bmi_1:
+        pheno_names = {0: "Metabolic PCOS", 1: "Lean PCOS"}
+        pheno_desc  = {0: "Higher BMI, weight & metabolic markers",
+                       1: "Lower BMI, leaner profile with similar follicle counts"}
+    else:
+        pheno_names = {0: "Lean PCOS", 1: "Metabolic PCOS"}
+        pheno_desc  = {0: "Lower BMI, leaner profile with similar follicle counts",
+                       1: "Higher BMI, weight & metabolic markers"}
+    pheno_colors_map = {0: '#E91E8C', 1: '#7B1FA2'}
+
     # Sidebar controls
-    st.sidebar.markdown("### 🎛️ Visualization Controls")
-    view_mode = st.sidebar.radio("Select View", ["Overview", "Detailed Comparison", "Feature Deep-Dive"])
+    st.sidebar.markdown("### Visualization Controls")
+    view_mode = st.sidebar.radio("Select View", ["Overview", "Detailed Comparison", "Feature Deep-Dive", "Classify Patient"])
     pheno_count_0 = (clusters == 0).sum()
     pheno_count_1 = (clusters == 1).sum()
     
@@ -111,55 +132,63 @@ try:
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            st.markdown("### 🗺️ Phenotype Clustering (PCA Projection)")
+            st.markdown("### Phenotype Clustering (PCA Projection)")
             st.markdown("*Click below to explore how PCOS patients naturally group by clinical features*")
             
             # Create scatter plot with better styling
             fig, ax = plt.subplots(figsize=(10, 7))
-            pheno_colors = ['#FF69B4', '#4B0082']
+            pheno_colors = ['#E91E8C', '#7B1FA2']
             
             for pheno in [0, 1]:
                 mask = clusters == pheno
-                ax.scatter(X_pca[mask, 0], X_pca[mask, 1], 
-                          c=pheno_colors[pheno], alpha=0.6, s=120, 
-                          label=f'Phenotype {pheno} (n={mask.sum()})',
-                          edgecolors='black', linewidth=0.5)
-            
-            # Plot centroids
+                ax.scatter(X_pca[mask, 0], X_pca[mask, 1],
+                          c=pheno_colors_map[pheno], alpha=0.6, s=120,
+                          label=f'{pheno_names[pheno]} (n={mask.sum()})',
+                          edgecolors='white', linewidth=0.5)
+
+            # Plot centroids — styled diamonds
             centroids_pca = pca.transform(kmeans.cluster_centers_)
-            ax.scatter(centroids_pca[:, 0], centroids_pca[:, 1], c='red', marker='X',
-                      s=600, edgecolors='black', linewidth=2.5, label='Phenotype Centers', zorder=5)
+            for i, (cx, cy) in enumerate(centroids_pca):
+                ax.scatter(cx, cy, c=pheno_colors_map[i], marker='D',
+                          s=300, edgecolors='white', linewidth=2, zorder=5)
+                ax.scatter(cx, cy, c='white', marker='D',
+                          s=80, zorder=6)
+            # Single neutral legend entry for centroids
+            ax.scatter([], [], c='#444', marker='D', s=100,
+                      edgecolors='white', linewidth=1.5, label='Cluster Centroid')
             
             ax.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.1%} variance)', fontsize=12, fontweight='bold')
             ax.set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.1%} variance)', fontsize=12, fontweight='bold')
             ax.set_title('K-Means Clustering of PCOS Patients', fontsize=14, fontweight='bold', pad=20)
             ax.grid(True, alpha=0.3, linestyle='--')
             ax.legend(loc='best', fontsize=10, framealpha=0.95)
-            
+            style_fig(fig, ax)
             st.pyplot(fig, use_container_width=True)
-        
+
         with col2:
-            st.markdown("### 📊 Population Distribution")
-            
+            st.markdown("### Population Distribution")
+
             phenotype_counts = [pheno_count_0, pheno_count_1]
             fig, ax = plt.subplots(figsize=(7, 6))
-            colors = ['#FF69B4', '#4B0082']
-            wedges, texts, autotexts = ax.pie(phenotype_counts, labels=[f'Phenotype 0\n(n={phenotype_counts[0]})', 
-                                                                          f'Phenotype 1\n(n={phenotype_counts[1]})'],
+            colors = ['#E91E8C', '#7B1FA2']
+            wedges, texts, autotexts = ax.pie(phenotype_counts,
+                                              labels=[f'{pheno_names[0]}\n(n={phenotype_counts[0]})',
+                                                      f'{pheno_names[1]}\n(n={phenotype_counts[1]})'],
                                               autopct='%1.1f%%', colors=colors, startangle=90,
                                               textprops={'fontsize': 11, 'weight': 'bold'})
-            
+
             for autotext in autotexts:
                 autotext.set_color('white')
                 autotext.set_fontsize(12)
                 autotext.set_weight('bold')
-            
+
             ax.set_title('PCOS Distribution', fontsize=12, fontweight='bold', pad=15)
+            style_fig(fig, ax)
             st.pyplot(fig, use_container_width=True)
         
         # Phenotype characteristics cards
         st.divider()
-        st.markdown("### 🏥 Phenotype Characteristics at a Glance")
+        st.markdown("### Phenotype Characteristics at a Glance")
         
         # Top differentiating features
         top_diff_features = effect_df.head(6)['feature'].tolist()
@@ -170,7 +199,8 @@ try:
             pheno_data = df_pcos[clusters == pheno_idx][numerical_cols]
             
             with col:
-                st.markdown(f"#### **Phenotype {pheno_idx}** (n={sum(clusters == pheno_idx)} patients)")
+                st.markdown(f"#### **{pheno_names[pheno_idx]}** (n={sum(clusters == pheno_idx)} patients)")
+                st.caption(pheno_desc[pheno_idx])
                 
                 # Key statistics
                 metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
@@ -192,7 +222,7 @@ try:
                 st.markdown(char_text)
     
     elif view_mode == "Detailed Comparison":
-        st.markdown("### 🔬 Detailed Phenotype Comparison")
+        st.markdown("### Detailed Phenotype Comparison")
         st.markdown("*Click a feature to highlight the key differences between phenotypes*")
         
         # Top differentiating features table
@@ -208,24 +238,25 @@ try:
             
             x_pos = np.arange(len(comparison_features))
             effect_values = comparison_features['cohens_d'].values
-            colors_effects = ['#FF4444' if x > 0 else '#4444FF' for x in effect_values]
+            colors_effects = ['#C2185B' if x > 0 else '#7B1FA2' for x in effect_values]
             
             bars = ax.barh(x_pos, effect_values, color=colors_effects, alpha=0.8, edgecolor='black', linewidth=1.5)
             
             ax.set_yticks(x_pos)
             ax.set_yticklabels(comparison_features['feature'].values, fontsize=11)
             ax.set_xlabel("Effect Size (Cohen's d)", fontsize=12, fontweight='bold')
-            ax.set_title("Differentiating Features Between Phenotypes\n(Red = Higher in Phenotype 1, Blue = Higher in Phenotype 0)", 
+            ax.set_title(f"Differentiating Features Between Phenotypes\n"
+                        f"(Pink = Higher in {pheno_names[1]}, Purple = Higher in {pheno_names[0]})",
                         fontsize=12, fontweight='bold', pad=15)
-            ax.axvline(x=0, color='black', linestyle='-', linewidth=1)
+            ax.axvline(x=0, color='#9E9E9E', linestyle='-', linewidth=1.2)
             ax.grid(axis='x', alpha=0.3, linestyle='--')
-            
-            # Highlight significant differences
+
             for i, (idx, row) in enumerate(comparison_features.iterrows()):
                 pct = row['pct_diff']
-                ax.text(row['cohens_d'], i, f"  {pct:.0f}%", 
+                ax.text(row['cohens_d'], i, f"  {pct:.0f}%",
                        va='center', fontsize=9, fontweight='bold')
-            
+
+            style_fig(fig, ax)
             st.pyplot(fig, use_container_width=True)
         
         with col2:
@@ -257,7 +288,7 @@ try:
         st.dataframe(comparison_table_df, use_container_width=True, hide_index=True)
     
     elif view_mode == "Feature Deep-Dive":
-        st.markdown("### 🔍 Feature Deep-Dive Analysis")
+        st.markdown("### Feature Deep-Dive Analysis")
         
         # Feature selector
         selected_feature = st.selectbox("Select Feature to Compare",
@@ -279,7 +310,7 @@ try:
             
             # Customize violin plot colors
             for pc in parts['bodies']:
-                pc.set_facecolor('#FF69B4')
+                pc.set_facecolor('#E91E8C')
                 pc.set_alpha(0.6)
             
             ax.set_xticks([0, 1])
@@ -287,7 +318,7 @@ try:
             ax.set_ylabel(selected_feature, fontsize=12, fontweight='bold')
             ax.set_title(f'{selected_feature} Distribution Comparison', fontsize=13, fontweight='bold', pad=15)
             ax.grid(axis='y', alpha=0.3, linestyle='--')
-            
+            style_fig(fig, ax)
             st.pyplot(fig, use_container_width=True)
         
         with col1:
@@ -318,14 +349,130 @@ try:
             st.metric("P-Value", f"{p_val:.4f}")
             
             if p_val < 0.05:
-                st.success("✅ Significantly Different", icon="✓")
+                st.success("Significantly Different")
             else:
-                st.info("No significant difference", icon="ℹ️")
+                st.info("No significant difference")
             
             mean_diff_pct = abs(data_p1.mean() - data_p0.mean()) / data_p0.mean() * 100
             st.metric("% Difference", f"{mean_diff_pct:.1f}%")
-    
+
+    elif view_mode == "Classify Patient":
+        st.markdown("### Classify a New Patient")
+        st.markdown("Enter a patient's clinical values to see which PCOS phenotype they most resemble.")
+
+        st.divider()
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            c_age   = st.number_input("Age (yrs)", 15, 50, 28, key="c_age")
+            c_bmi   = st.number_input("BMI (kg/m²)", 15.0, 45.0, 25.0, key="c_bmi")
+            c_wt    = st.number_input("Weight (kg)", 35.0, 120.0, 65.0, key="c_wt")
+            c_ht    = st.number_input("Height (cm)", 140.0, 185.0, 160.0, key="c_ht")
+            c_pulse = st.number_input("Pulse (bpm)", 40, 120, 75, key="c_pulse")
+            c_rr    = st.number_input("Resp. Rate (br/min)", 10, 40, 16, key="c_rr")
+
+        with col2:
+            c_hb    = st.number_input("Haemoglobin (g/dL)", 5.0, 18.0, 13.0, key="c_hb")
+            c_cycle = st.number_input("Cycle Length (days)", 15, 90, 30, key="c_cycle")
+            c_fsh   = st.number_input("FSH (mIU/ml)", 0.5, 20.0, 6.0, key="c_fsh")
+            c_lh    = st.number_input("LH (mIU/ml)", 0.1, 100.0, 5.0, key="c_lh")
+            c_fsh_lh= st.number_input("FSH/LH ratio", 0.1, 10.0, 1.2, key="c_fshlh")
+            c_hip   = st.number_input("Hip (inch)", 28.0, 55.0, 38.0, key="c_hip")
+
+        with col3:
+            c_waist = st.number_input("Waist (inch)", 22.0, 50.0, 30.0, key="c_waist")
+            c_whr   = st.number_input("Waist-Hip Ratio", 0.6, 1.1, 0.8, key="c_whr")
+            c_tsh   = st.number_input("TSH (mIU/L)", 0.1, 10.0, 2.5, key="c_tsh")
+            c_amh   = st.number_input("AMH (ng/ml)", 0.0, 15.0, 5.0, key="c_amh")
+            c_prl   = st.number_input("Prolactin (ng/ml)", 0.0, 100.0, 15.0, key="c_prl")
+            c_vitd  = st.number_input("Vit D3 (ng/ml)", 0.0, 80.0, 20.0, key="c_vitd")
+
+        # Additional fields in expander
+        with st.expander("More features (optional — uses dataset mean if left at default)"):
+            ex_col1, ex_col2 = st.columns(2)
+            with ex_col1:
+                c_prg  = st.number_input("Progesterone (ng/ml)", 0.0, 10.0, 0.5, key="c_prg")
+                c_rbs  = st.number_input("Random Blood Sugar (mg/dL)", 50.0, 300.0, 90.0, key="c_rbs")
+                c_bps  = st.number_input("Systolic BP (mmHg)", 80, 180, 120, key="c_bps")
+                c_bpd  = st.number_input("Diastolic BP (mmHg)", 50, 120, 80, key="c_bpd")
+            with ex_col2:
+                c_fl   = st.number_input("Follicles Left", 0, 30, 10, key="c_fl")
+                c_fr   = st.number_input("Follicles Right", 0, 30, 10, key="c_fr")
+                c_afl  = st.number_input("Avg Follicle Size L (mm)", 0.0, 30.0, 15.0, key="c_afl")
+                c_afr  = st.number_input("Avg Follicle Size R (mm)", 0.0, 30.0, 15.0, key="c_afr")
+            c_endo = st.number_input("Endometrium (mm)", 0.0, 20.0, 8.0, key="c_endo")
+
+        if st.button("Classify Patient", use_container_width=True):
+            patient_vals = [c_age, c_wt, c_ht, c_bmi, c_pulse, c_rr, c_hb, c_cycle,
+                            c_fsh, c_lh, c_fsh_lh, c_hip, c_waist, c_whr, c_tsh,
+                            c_amh, c_prl, c_vitd, c_prg, c_rbs, c_bps, c_bpd,
+                            c_fl, c_fr, c_afl, c_afr, c_endo]
+
+            from sklearn.preprocessing import StandardScaler as _SS
+            # Use the same scaler fitted on the PCOS cluster data
+            patient_arr = np.array([patient_vals])
+            # Re-fit scaler on full PCOS data (same as perform_clustering does)
+            X_pcos_raw = df_pcos[numerical_cols].fillna(df_pcos[numerical_cols].mean())
+            scaler_cls = _SS()
+            scaler_cls.fit(X_pcos_raw)
+            patient_scaled = scaler_cls.transform(patient_arr)
+
+            predicted_cluster = kmeans.predict(patient_scaled)[0]
+            patient_pca = pca.transform(patient_scaled)
+
+            # Distances to both centroids
+            dists = np.linalg.norm(kmeans.cluster_centers_ - patient_scaled, axis=1)
+            confidence = 1 - (dists[predicted_cluster] / dists.sum())
+
+            st.divider()
+            res_col1, res_col2 = st.columns([1, 2])
+
+            with res_col1:
+                color = pheno_colors_map[predicted_cluster]
+                st.markdown(
+                    f'<div style="background:{color}22; border-left:5px solid {color}; '
+                    f'border-radius:12px; padding:20px; margin-bottom:12px;">'
+                    f'<p style="font-size:1.05rem; font-weight:600; color:{color}; margin:0;">'
+                    f'Predicted Phenotype</p>'
+                    f'<p style="font-size:1.6rem; font-weight:700; color:#1C1C2E; margin:4px 0;">'
+                    f'{pheno_names[predicted_cluster]}</p>'
+                    f'<p style="color:#666; font-size:0.9rem; margin:0;">'
+                    f'{pheno_desc[predicted_cluster]}</p>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+                st.metric("Cluster Confidence", f"{confidence*100:.1f}%")
+                st.metric("Distance to Centroid", f"{dists[predicted_cluster]:.2f}")
+
+            with res_col2:
+                fig, ax = plt.subplots(figsize=(9, 6))
+                for pheno in [0, 1]:
+                    mask = clusters == pheno
+                    ax.scatter(X_pca[mask, 0], X_pca[mask, 1],
+                              c=pheno_colors_map[pheno], alpha=0.35, s=80,
+                              label=pheno_names[pheno], edgecolors='none')
+
+                # Centroids
+                centroids_pca = pca.transform(kmeans.cluster_centers_)
+                for i, (cx, cy) in enumerate(centroids_pca):
+                    ax.scatter(cx, cy, c=pheno_colors_map[i], marker='D',
+                              s=200, edgecolors='white', linewidth=1.5, zorder=5)
+
+                # Patient point
+                ax.scatter(patient_pca[0, 0], patient_pca[0, 1],
+                          c='gold', marker='*', s=600,
+                          edgecolors='#C2185B', linewidth=2, zorder=10,
+                          label='This Patient')
+
+                ax.set_xlabel(f'PC1 ({pca.explained_variance_ratio_[0]:.1%} variance)', fontsize=11)
+                ax.set_ylabel(f'PC2 ({pca.explained_variance_ratio_[1]:.1%} variance)', fontsize=11)
+                ax.set_title('Patient Position in Phenotype Space', fontsize=13, fontweight='bold')
+                ax.legend(fontsize=9)
+                ax.grid(True, alpha=0.3, linestyle='--')
+                style_fig(fig, ax)
+                st.pyplot(fig, use_container_width=True)
+
 except Exception as e:
-    st.error("❌ Error Loading Phenotype Data")
+    st.error("Error Loading Phenotype Data")
     st.error(f"Could not load or process clustering data: {str(e)}")
     st.info("Make sure the cleaned data file exists at: `data/processed/cleaned_data.csv`")
