@@ -240,8 +240,8 @@ elif analysis_type == 'PCOS vs Non-PCOS Distribution':
 elif analysis_type == 'Model Comparison':
     st.markdown("### Model Comparison: All Five Models")
     st.markdown(
-        "5-fold stratified CV with identical splits across all models (NB07). "
-        "Error bars show ± 1 SD. All pairwise differences are non-significant (Wilcoxon signed-rank, Bonferroni-corrected)."
+        "5-fold stratified CV with identical splits across all models. "
+        "Error bars show ± 1 SD. All pairwise differences are non-significant."
     )
 
     comparison_df = run_model_comparison()

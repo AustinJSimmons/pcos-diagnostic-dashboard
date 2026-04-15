@@ -126,7 +126,6 @@ try:
         
         with col1:
             st.markdown("### Phenotype Clustering (PCA Projection)")
-            st.markdown("*Click below to explore how PCOS patients naturally group by clinical features*")
             
             fig, ax = plt.subplots(figsize=(10, 7))
             pheno_colors = ['#E91E8C', '#7B1FA2']
@@ -211,7 +210,6 @@ try:
     
     elif view_mode == "Detailed Comparison":
         st.markdown("### Detailed Phenotype Comparison")
-        st.markdown("*Click a feature to highlight the key differences between phenotypes*")
         
         comparison_features = effect_df.head(10).copy()
         
@@ -255,7 +253,7 @@ try:
         
         st.divider()
         
-        st.markdown("### 📋 Feature-by-Feature Comparison")
+        st.markdown("### Feature-by-Feature Comparison")
 
         comparison_table = []
         for feature in comparison_features['feature'].head(10):
