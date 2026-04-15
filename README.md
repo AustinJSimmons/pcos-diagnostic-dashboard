@@ -119,7 +119,7 @@ Original data collected from 10 different hospitals across Kerala, India.
 
 ## AI Disclosure
 
-Claude Code (Anthropic) was used during development of this project to:
+AI was used during development of this project to:
 - Template and debug the Streamlit dashboard UI
 - Help debug model integration and data pipeline issues
 - Help conceptualise analytical sections across the notebooks
