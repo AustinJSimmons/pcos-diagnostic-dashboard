@@ -193,11 +193,12 @@ try:
                 
                 metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
                 with metrics_col1:
-                    st.metric("Avg Age", f"{pheno_data['age_yrs'].mean():.1f} yrs")
+                    st.metric("Avg FSH (mIU/ml)", f"{pheno_data['fsh_miu_ml'].mean():.2f}")
                 with metrics_col2:
                     st.metric("Avg BMI", f"{pheno_data['bmi'].mean():.1f} kg/m²")
                 with metrics_col3:
-                    st.metric("Avg Follicles", f"{(pheno_data['follicle_no_l'].mean() + pheno_data['follicle_no_r'].mean()):.0f}")
+                    cycle_irreg_pct = df_pcos[clusters == pheno_idx]['cycle_r_i'].mean() * 100
+                    st.metric("Cycle Irregularity", f"{cycle_irreg_pct:.1f}%")
                 
                 st.markdown("**Key Characteristics:**")
                 char_text = f"""
