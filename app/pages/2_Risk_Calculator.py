@@ -64,7 +64,7 @@ def train_models():
         logreg = LogisticRegression(random_state=42, max_iter=1000)
         logreg.fit(X_scaled, y)
 
-        # Random Forest — fixed params matching NB07 controlled comparison
+        # same params as NB07 so results are comparable
         rf = RandomForestClassifier(
             n_estimators=300, max_depth=10, min_samples_split=5,
             class_weight='balanced', random_state=42, n_jobs=-1
@@ -100,7 +100,7 @@ st.markdown("""
 
 st.divider()
 
-# --- Model selection ---
+# model selection
 st.markdown("### Model Selection")
 
 sel_col1, sel_col2, sel_col3 = st.columns([1, 1, 2])
@@ -130,13 +130,13 @@ with sel_col3:
 
 st.divider()
 
-# --- Resolve model info ---
+# pick the right model dict based on selections above
 feature_key = 'full' if feature_set == 'Full Model' else 'noninvasive'
 algo_key = 'logreg' if algorithm == 'Logistic Regression' else 'rf'
 model_info = models_dict[feature_key][algo_key]
 model_type_label = f"{feature_set} — {algorithm}"
 
-# --- Patient inputs ---
+# patient input fields
 st.markdown("### Patient Information")
 
 col1, col2, col3 = st.columns(3)
@@ -182,7 +182,7 @@ with col3:
 
 st.divider()
 
-# --- Calculate button ---
+# run predictions when the button is clicked
 if st.button("Calculate Risk Score", use_container_width=True):
     st.session_state['show_results'] = True
     st.session_state['last_model_label'] = model_type_label
@@ -199,7 +199,8 @@ if st.button("Calculate Risk Score", use_container_width=True):
     if algo_key == 'logreg':
         contribs = model_info['model'].coef_[0] * input_scaled[0]
     else:
-        # RF: global importance × signed standardised input value as directionality proxy
+        # RF doesn't give directional per-patient contributions; multiply feature importance by
+        # the standardised input value as a rough directional proxy
         contribs = model_info['model'].feature_importances_ * input_scaled[0]
     st.session_state['patient_contribs'] = pd.DataFrame({
         'Feature': model_info['features'],
@@ -210,7 +211,7 @@ if st.button("Calculate Risk Score", use_container_width=True):
     st.session_state.pop('shap_values', None)
     st.session_state['algo_key'] = algo_key
     st.session_state['feature_set'] = feature_set
-    # store symptom flags for recommendations
+    # keep inputs in session state so the recommendation block can read them
     st.session_state['inputs'] = dict(
         bmi=bmi, pulse=pulse, bp_sys=bp_sys, bp_dia=bp_dia, cycle=cycle,
         follicle_r=follicle_r, follicle_l=follicle_l, amh=amh, lh=lh, fsh=fsh,
@@ -222,7 +223,7 @@ if not st.session_state.get('show_results', False):
     st.info("Fill in patient information above and click **Calculate Risk Score** to see results.")
     st.stop()
 
-# --- Restore state ---
+# pull everything back out of session state
 risk_prob = st.session_state['risk_prob']
 model_type_label = st.session_state['last_model_label']
 _algo_key = st.session_state['algo_key']
@@ -230,7 +231,7 @@ _feature_set = st.session_state['feature_set']
 _inputs = st.session_state['inputs']
 _patient_contribs = st.session_state['patient_contribs']
 
-# --- Results ---
+# results display
 st.markdown("### Risk Assessment Results")
 st.markdown(f"**Model:** {model_type_label}")
 
@@ -250,7 +251,7 @@ with col1:
 with col2:
     fig, ax = plt.subplots(figsize=(8, 6))
 
-    # Arc goes from left (angle=π, 0% risk) to right (angle=0, 100% risk)
+    # 0% on the left (angle=π), 100% on the right (angle=0) — needle moves right as risk rises
     low_angles = np.linspace(np.pi, 0.80 * np.pi, 20)          # leftmost 20% → green
     ax.fill_between(np.cos(low_angles), 0, np.sin(low_angles), color='#00AA00', alpha=0.4, label='Low (0–20%)')
     ax.plot(np.cos(low_angles), np.sin(low_angles), color='#00AA00', linewidth=3)
@@ -263,7 +264,7 @@ with col2:
     ax.fill_between(np.cos(high_angles), 0, np.sin(high_angles), color='#FF0000', alpha=0.4, label='High (50–100%)')
     ax.plot(np.cos(high_angles), np.sin(high_angles), color='#FF0000', linewidth=3)
 
-    # risk_prob=0 → angle=π (left), risk_prob=1 → angle=0 (right)
+    # invert so the needle points left at 0% and right at 100%
     needle_angle = (1 - risk_prob) * np.pi
     ax.arrow(0, 0, np.cos(needle_angle) * 0.85, np.sin(needle_angle) * 0.85,
              head_width=0.08, head_length=0.08, fc='black', ec='black', linewidth=3, zorder=10)
@@ -283,7 +284,7 @@ with col2:
 
 st.divider()
 
-# --- Patient-specific feature contributions ---
+# which features pushed the score up or down for this patient
 st.markdown("### Contributing Risk Factors")
 if _algo_key == 'logreg':
     st.markdown("*How each of this patient's values contributes to their log-odds of PCOS. "
@@ -316,7 +317,7 @@ with col2:
 
 st.divider()
 
-# --- Recommendations ---
+# clinical recommendations based on what the patient entered
 st.markdown("### Clinical Recommendations")
 
 recommendations = []

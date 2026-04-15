@@ -110,6 +110,18 @@ Run notebooks in order. Each notebook reads `data/processed/cleaned_data.csv` an
 └── run_dashboard.bat
 ```
 
-## License
+## Data Citation
 
-Research and educational use only. Risk scores produced by these models are not a substitute for clinical judgement or formal diagnostic criteria (Rotterdam Criteria).
+Kottarathil, P. (2020). *Polycystic ovary syndrome (PCOS)* [Dataset]. Kaggle.
+https://www.kaggle.com/datasets/prasoonkottarathil/polycystic-ovary-syndrome-pcos
+
+Original data collected from 10 different hospitals across Kerala, India.
+
+## AI Disclosure
+
+Claude Code (Anthropic) was used during development of this project to:
+- Template and debug the Streamlit dashboard UI
+- Help debug model integration and data pipeline issues
+- Help conceptualise analytical sections across the notebooks
+
+All analysis, modelling decisions, interpretation of results, and written conclusions are the work of the project authors. AI assistance was used as a development tool, not as a substitute for analytical judgement.

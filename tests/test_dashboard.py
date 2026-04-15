@@ -32,7 +32,7 @@ CLUSTER_FEATURES = ['age_yrs', 'weight_kg', 'heightcm', 'bmi', 'pulse_ratebpm', 
                     'avg_f_size_l_mm', 'avg_f_size_r_mm', 'endometrium_mm']
 
 
-# ── Fixtures ──────────────────────────────────────────────────────────────────
+# fixtures
 
 @pytest.fixture(scope="session")
 def df():
@@ -44,7 +44,7 @@ def df_pcos(df):
     return df[df['pcos_y_n'] == 1].reset_index(drop=True)
 
 
-# ── Data loading ──────────────────────────────────────────────────────────────
+# data loading
 
 def test_data_file_exists():
     assert DATA_PATH.exists()
@@ -69,7 +69,7 @@ def test_no_all_null_columns(df):
     assert not all_null, f"Completely null columns: {all_null}"
 
 
-# ── Risk Calculator — model training ─────────────────────────────────────────
+# risk calculator — model training
 
 def test_logreg_full_trains(df):
     X = df[FULL_FEATURES].fillna(df[FULL_FEATURES].mean())
@@ -108,7 +108,7 @@ def test_rf_noninvasive_trains(df):
     assert hasattr(model, 'feature_importances_')
 
 
-# ── Risk Calculator — predictions ─────────────────────────────────────────────
+# risk calculator — predictions
 
 @pytest.fixture(scope="session")
 def logreg_full(df):
@@ -143,7 +143,7 @@ def test_contributions_length_matches_features(logreg_full):
     assert len(contribs) == len(FULL_FEATURES)
 
 
-# ── Phenotype Explorer — clustering ──────────────────────────────────────────
+# phenotype explorer — clustering
 
 @pytest.fixture(scope="session")
 def clustering_result(df_pcos):

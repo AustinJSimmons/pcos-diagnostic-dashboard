@@ -14,7 +14,7 @@ st.set_page_config(
 
 apply_styles()
 
-# Title — emoji separated from gradient span so it renders correctly
+# emoji has to stay outside the span or it clips on some browsers
 st.markdown(
     '<p style="font-size:2.4rem; font-weight:700; margin-bottom:4px;">'
     '<span style="color:#EA288D;">PCOS Diagnostic Dashboard</span></p>',
@@ -102,7 +102,7 @@ with col2:
 
 st.divider()
 
-# --- Research Context ---
+# research context
 st.markdown("### Research Context")
 
 ctx_col1, ctx_col2 = st.columns(2)
@@ -127,7 +127,7 @@ with ctx_col2:
 
 st.divider()
 
-# --- Motivation & Background ---
+# motivation
 st.markdown("### Motivation & Background")
 
 mot_col1, mot_col2 = st.columns(2)
@@ -168,7 +168,7 @@ with mot_col2:
 
 st.divider()
 
-# --- Key Findings ---
+# key findings
 st.markdown("### Key Findings at a Glance")
 
 kf_col1, kf_col2, kf_col3 = st.columns(3)
