@@ -100,7 +100,7 @@ Run notebooks in order. Each notebook reads `data/processed/cleaned_data.csv` an
 │       ├── 2_Risk_Calculator.py
 │       └── 3_Feature_Impact.py
 ├── data/
-│   ├── raw/                        # Place source XLSX files here (not committed)
+│   ├── raw/                        
 │   └── processed/                  # cleaned_data.csv and notebook outputs
 ├── notebooks/                      # Analysis notebooks (run in order 01–08)
 ├── tests/
