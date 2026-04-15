@@ -8,10 +8,10 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
-from xgboost import XGBClassifier
 
 DATA_PATH = Path(__file__).parent.parent / 'data' / 'processed' / 'cleaned_data.csv'
 
@@ -19,7 +19,7 @@ FULL_FEATURES = ['age_yrs', 'bmi', 'follicle_no_r', 'follicle_no_l', 'amhng_ml',
                  'lh_miu_ml', 'fsh_miu_ml', 'weight_kg', 'waist_hip_ratio']
 
 NONINVASIVE_FEATURES = ['age_yrs', 'bmi', 'weight_kg', 'waist_hip_ratio',
-                        'pulse_ratebpm', 'rr_breaths_min', 'cycle_lengthdays',
+                        'pulse_ratebpm', 'rr_breaths_min', 'cycle_r_i', 'cycle_lengthdays',
                         'bp_systolic_mmhg', 'bp_diastolic_mmhg', 'weight_gain_y_n',
                         'hair_growth_y_n', 'skin_darkening_y_n', 'hair_loss_y_n',
                         'pimples_y_n', 'fast_food_y_n', 'reg_exercise_y_n', 'pregnant_y_n']
@@ -89,25 +89,21 @@ def test_logreg_noninvasive_trains(df):
     model.fit(X_scaled, y)
     assert hasattr(model, 'coef_')
 
-def test_xgb_full_trains(df):
-    X = df[FULL_FEATURES].fillna(df[FULL_FEATURES].mean())
+def test_rf_full_trains(df):
+    X = df[FULL_FEATURES].fillna(df[FULL_FEATURES].median(numeric_only=True))
     y = df['pcos_y_n']
-    scale_pos_weight = (y == 0).sum() / (y == 1).sum()
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-    model = XGBClassifier(random_state=42, scale_pos_weight=scale_pos_weight,
-                          n_estimators=50, verbosity=0, eval_metric='logloss')
+    model = RandomForestClassifier(n_estimators=50, random_state=42, class_weight='balanced')
     model.fit(X_scaled, y)
     assert hasattr(model, 'feature_importances_')
 
-def test_xgb_noninvasive_trains(df):
-    X = df[NONINVASIVE_FEATURES].fillna(df[NONINVASIVE_FEATURES].mean())
+def test_rf_noninvasive_trains(df):
+    X = df[NONINVASIVE_FEATURES].fillna(df[NONINVASIVE_FEATURES].median(numeric_only=True))
     y = df['pcos_y_n']
-    scale_pos_weight = (y == 0).sum() / (y == 1).sum()
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-    model = XGBClassifier(random_state=42, scale_pos_weight=scale_pos_weight,
-                          n_estimators=50, verbosity=0, eval_metric='logloss')
+    model = RandomForestClassifier(n_estimators=50, random_state=42, class_weight='balanced')
     model.fit(X_scaled, y)
     assert hasattr(model, 'feature_importances_')
 
@@ -178,11 +174,11 @@ def test_phenotype_naming_logic(df_pcos, clustering_result):
     bmi_0 = df_pcos[clusters == 0]['bmi'].mean()
     bmi_1 = df_pcos[clusters == 1]['bmi'].mean()
     if bmi_0 > bmi_1:
-        names = {0: "Metabolic PCOS", 1: "Lean PCOS"}
+        names = {0: "Metabolic PCOS", 1: "Hyperandrogenic PCOS"}
     else:
-        names = {0: "Lean PCOS", 1: "Metabolic PCOS"}
+        names = {0: "Hyperandrogenic PCOS", 1: "Metabolic PCOS"}
     assert "Metabolic PCOS" in names.values()
-    assert "Lean PCOS" in names.values()
+    assert "Hyperandrogenic PCOS" in names.values()
 
 def test_classify_patient_returns_valid_cluster(clustering_result, df_pcos):
     clusters, kmeans, pca, scaler, *_ = clustering_result

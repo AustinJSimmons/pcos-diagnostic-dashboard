@@ -2,113 +2,114 @@
 
 An interactive Streamlit dashboard for exploring Polycystic Ovary Syndrome (PCOS) data, assessing diagnostic risk, and understanding feature importance through machine learning.
 
+**GitHub:** https://github.com/AustinJSimmons/pcos-diagnostic-dashboard
+
 ## Overview
 
-This dashboard provides comprehensive analytical tools for PCOS research and diagnosis:
-- **541 patient records** with 27 clinical indicators
-- **177 PCOS cases (32.7%)** and 364 controls (67.3%)
-- ML-powered risk assessment and phenotype clustering
+Built on a clinical dataset of 541 patients (177 PCOS, 364 controls) spanning 41 features — hormonal assays, anthropometric measurements, ultrasound findings, and self-reported symptoms.
 
-## Features
+**Key results (5-fold stratified CV, NB07):**
 
-### 🔍 Phenotype Explorer
-Discover distinct PCOS phenotypes through clustering analysis and explore patient subgroups based on clinical characteristics.
+| Model | Full AUC | Low-Cost AUC |
+|---|---|---|
+| XGBoost | 0.9623 ± 0.012 | 0.8750 ± 0.018 |
+| Random Forest | 0.9610 ± 0.012 | 0.8891 ± 0.024 |
+| LASSO | 0.9551 ± 0.009 | 0.8853 ± 0.024 |
+| Ridge | 0.9505 ± 0.004 | 0.8803 ± 0.027 |
+| Logistic Regression | 0.9419 ± 0.003 | 0.8778 ± 0.027 |
 
-### 📊 Risk Calculator
-Assess individual PCOS risk using key clinical indicators with customizable thresholds (Low: 0-25%, Medium: 25-75%, High: 75%+).
+All pairwise differences are non-significant (Wilcoxon signed-rank, Bonferroni-corrected).
 
-### 💡 Feature Impact
-Visualize feature importance and understand which clinical factors most strongly influence PCOS diagnosis using interpretable ML techniques.
+## Dashboard Features
 
-## Tech Stack
+- **Phenotype Explorer** — K-Means clustering (k=2) on PCOS patients reveals Metabolic and Hyperandrogenic subtypes
+- **Risk Calculator** — Logistic Regression and Random Forest for personalized risk scoring; full clinical or non-invasive (symptom/vitals only) model
+- **Feature Impact** — Feature importance from LR coefficients and mutual information; head-to-head comparison of all five models
 
-- **Framework**: Streamlit (interactive web app)
-- **ML/Data**: scikit-learn, XGBoost, pandas, numpy
-- **Visualization**: matplotlib, seaborn
-- **Analysis**: scipy for statistical methods
-
-## Setup
+## Quickstart
 
 ### Requirements
 - Python 3.8+
-- Dependencies listed in `requirements.txt`
+- All dependencies in `requirements.txt`
 
 ### Installation
 
 ```bash
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # macOS/Linux
-# or venv\Scripts\activate on Windows
+git clone https://github.com/AustinJSimmons/pcos-diagnostic-dashboard.git
+cd pcos-diagnostic-dashboard
 
-# Install dependencies
+python -m venv venv
+source venv/bin/activate        # macOS/Linux
+# venv\Scripts\activate         # Windows
+
 pip install -r requirements.txt
 ```
 
-### Running the Dashboard
+### Data setup
+
+The raw data files are not committed to this repository. Place the following files in `data/raw/` before running:
+
+- `PCOS_data_without_infertility.xlsx` — main clinical dataset (541 patients, 45 columns)
+- `PCOS_infertility.xlsx` — infertility subset
+
+Then generate the cleaned dataset by running `notebooks/01-data-cleaning.ipynb`. This produces `data/processed/cleaned_data.csv`, which all other notebooks and the dashboard depend on.
+
+### Run the dashboard
 
 ```bash
-# macOS/Linux
+# macOS/Linux (installs deps if needed, then launches)
 ./run_dashboard.sh
 
-# Windows
-run_dashboard.bat
+# Manual
+source venv/bin/activate
+streamlit run app/Home.py
 ```
 
-The dashboard will open at `http://localhost:8501`
+Dashboard opens at `http://localhost:8501`.
 
-## Project Structure
+### Run tests
+
+```bash
+source venv/bin/activate
+python -m pytest tests/test_dashboard.py -v
+```
+
+## Reproducing the analysis
+
+Run notebooks in order. Each notebook reads `data/processed/cleaned_data.csv` and writes outputs to `data/processed/`.
+
+| Notebook | Purpose |
+|---|---|
+| `01-data-cleaning.ipynb` | Cleans raw data, recalculates BMI/WHR/FSH-LH ratio, produces `cleaned_data.csv` |
+| `02-eda-pca.ipynb` | EDA with t-tests, chi-square tests, PCA on 27 continuous features |
+| `03-xgboost-shap.ipynb` | Tuned XGBoost, SHAP feature importance, threshold optimisation, outlier sensitivity |
+| `04-eda-classifier.ipynb` | Mutual information feature selection across all 41 features; fast food confounding analysis |
+| `05-clustering.ipynb` | K-Means phenotype clustering on PCOS-only cohort |
+| `06-random-forest.ipynb` | Random Forest classifier with cross-validation |
+| `07-model-comparison.ipynb` | All five models with identical CV splits, Wilcoxon signed-rank significance testing |
+| `08-screening-context-comparison.ipynb` | Sensitivity, specificity, PPV, NPV, calibration, DCA, model ranking for screening context |
+
+## Project structure
 
 ```
-├── app/                        # Streamlit application
-│   ├── Home.py                 # Main dashboard
-│   ├── styles.py               # Shared styles and matplotlib theme
-│   └── pages/                  # Feature pages
+├── app/
+│   ├── Home.py                     # Landing page
+│   ├── styles.py                   # Shared CSS and matplotlib theme
+│   └── pages/
 │       ├── 1_Phenotype_Explorer.py
 │       ├── 2_Risk_Calculator.py
 │       └── 3_Feature_Impact.py
-├── src/                        # Core utilities
-│   ├── init.py
-│   ├── preprocessing.py        # Data cleaning
-│   └── model_training.py       # ML models
 ├── data/
-│   ├── raw/                    # Original PCOS datasets
-│   └── processed/              # Cleaned data (cleaned_data.csv)
-├── notebooks/                  # Analysis notebooks
-│   ├── 01-data-cleaning.ipynb
-│   ├── 02-eda-pca.ipynb
-│   ├── 03-xgboost-shap.ipynb
-│   ├── 04-eda-classifier.ipynb
-│   └── 05-clustering.ipynb
+│   ├── raw/                        # Place source XLSX files here (not committed)
+│   └── processed/                  # cleaned_data.csv and notebook outputs
+├── notebooks/                      # Analysis notebooks (run in order 01–08)
 ├── tests/
-│   └── test_dashboard.py       # Core logic tests
-├── docs/
-│   └── index.html              # Generated documentation
-├── generate_docs.py            # Documentation generator
+│   └── test_dashboard.py
 ├── requirements.txt
 ├── run_dashboard.sh
 └── run_dashboard.bat
 ```
 
-## Data
-
-- **Source**: PCOS patient registry with clinical and laboratory measurements
-- **Size**: 541 samples, 27 features
-- **Split**: 177 positive cases, 364 controls
-- **Files**:
-  - `PCOS_data_without_infertility.csv` - Main dataset
-  - `PCOS_infertility.csv` - Infertility subset
-  - `cleaned_data.csv` - Preprocessed data for dashboard
-
-## Analysis Notebooks
-
-1. **01-data-cleaning**: Data preprocessing and validation
-2. **02-eda-pca**: Exploratory data analysis and dimensionality reduction
-3. **03-xgboost-shap**: XGBoost modeling with SHAP interpretability
-4. **04-eda-classifier**: Classification model evaluation
-5. **05-clustering**: Patient phenotype clustering analysis
-
 ## License
 
-This project is for research and educational purposes.
-
+Research and educational use only. Risk scores produced by these models are not a substitute for clinical judgement or formal diagnostic criteria (Rotterdam Criteria).

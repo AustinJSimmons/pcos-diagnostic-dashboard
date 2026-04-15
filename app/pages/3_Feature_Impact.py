@@ -50,9 +50,20 @@ def load_and_analyze():
                       'hipinch', 'waistinch', 'waist_hip_ratio', 'tsh_miu_l', 'amhng_ml',
                       'prlng_ml', 'vit_d3_ng_ml', 'prgng_ml', 'rbsmg_dl', 'bp_systolic_mmhg',
                       'bp_diastolic_mmhg', 'follicle_no_l', 'follicle_no_r',
-                      'avg_f_size_l_mm', 'avg_f_size_r_mm', 'endometrium_mm']
+                      'avg_f_size_l_mm', 'avg_f_size_r_mm', 'endometrium_mm',
+                      'blood_group', 'marraige_status_yrs', 'no_of_aborptions',
+                      'i_beta_hcg_miu_ml', 'ii_beta_hcg_miu_ml']
 
-    X = df[numerical_cols].fillna(df[numerical_cols].mean())
+    binary_cols = ['cycle_r_i', 'pregnant_y_n', 'weight_gain_y_n', 'hair_growth_y_n',
+                   'skin_darkening_y_n', 'hair_loss_y_n', 'pimples_y_n',
+                   'fast_food_y_n', 'reg_exercise_y_n']
+
+    all_feature_cols = numerical_cols + binary_cols
+
+    # ii_beta_hcg_miu_ml can have mixed types in source data
+    df['ii_beta_hcg_miu_ml'] = pd.to_numeric(df['ii_beta_hcg_miu_ml'], errors='coerce')
+
+    X = df[all_feature_cols].fillna(df[all_feature_cols].median(numeric_only=True))
     y = df['pcos_y_n']
 
     scaler = StandardScaler()
@@ -64,29 +75,36 @@ def load_and_analyze():
     mi_scores = mutual_info_classif(X_scaled, y, random_state=42)
 
     feature_importance = pd.DataFrame({
-        'Feature': numerical_cols,
+        'Feature': all_feature_cols,
         'Model Coefficient': model.coef_[0],
         'MI Score': mi_scores,
         'Abs Coefficient': np.abs(model.coef_[0])
     }).sort_values('Abs Coefficient', ascending=False)
 
-    return df, X, y, numerical_cols, feature_importance, model
+    return df, X, y, all_feature_cols, feature_importance, model
 
 
 def run_model_comparison():
-    # Precomputed via 5-fold stratified CV using tuned hyperparameters from notebook
-    # (03-xgboost-shap.ipynb grid search). Pipeline used to prevent data leakage.
+    # Precomputed via 5-fold stratified CV with fixed splits across all models (NB07).
+    # Full feature set: 41 features. Low-cost: 18 non-invasive features.
+    # All pairwise differences non-significant (Wilcoxon signed-rank, Bonferroni-corrected).
     results = [
-        {'Feature Set': 'Full (9 features)',          'Algorithm': 'Logistic Regression', 'Accuracy': 0.8503, 'Accuracy SD': 0.0289, 'ROC-AUC': 0.9051, 'ROC-AUC SD': 0.0018, 'F1 Score': 0.7595, 'F1 SD': 0.0468},
-        {'Feature Set': 'Full (9 features)',          'Algorithm': 'XGBoost',             'Accuracy': 0.8539, 'Accuracy SD': 0.0298, 'ROC-AUC': 0.9094, 'ROC-AUC SD': 0.0211, 'F1 Score': 0.7775, 'F1 SD': 0.0531},
-        {'Feature Set': 'Non-Invasive (17 features)', 'Algorithm': 'Logistic Regression', 'Accuracy': 0.8447, 'Accuracy SD': 0.0355, 'ROC-AUC': 0.8662, 'ROC-AUC SD': 0.0307, 'F1 Score': 0.7536, 'F1 SD': 0.0516},
-        {'Feature Set': 'Non-Invasive (17 features)', 'Algorithm': 'XGBoost',             'Accuracy': 0.8170, 'Accuracy SD': 0.0358, 'ROC-AUC': 0.8744, 'ROC-AUC SD': 0.0278, 'F1 Score': 0.7220, 'F1 SD': 0.0499},
+        {'Feature Set': 'Full (41 features)',          'Algorithm': 'Logistic Regression', 'ROC-AUC': 0.9419, 'ROC-AUC SD': 0.0026},
+        {'Feature Set': 'Full (41 features)',          'Algorithm': 'Ridge',               'ROC-AUC': 0.9505, 'ROC-AUC SD': 0.0035},
+        {'Feature Set': 'Full (41 features)',          'Algorithm': 'LASSO',               'ROC-AUC': 0.9551, 'ROC-AUC SD': 0.0093},
+        {'Feature Set': 'Full (41 features)',          'Algorithm': 'XGBoost',             'ROC-AUC': 0.9623, 'ROC-AUC SD': 0.0123},
+        {'Feature Set': 'Full (41 features)',          'Algorithm': 'Random Forest',       'ROC-AUC': 0.9610, 'ROC-AUC SD': 0.0119},
+        {'Feature Set': 'Non-Invasive (18 features)', 'Algorithm': 'Logistic Regression', 'ROC-AUC': 0.8778, 'ROC-AUC SD': 0.0271},
+        {'Feature Set': 'Non-Invasive (18 features)', 'Algorithm': 'Ridge',               'ROC-AUC': 0.8803, 'ROC-AUC SD': 0.0272},
+        {'Feature Set': 'Non-Invasive (18 features)', 'Algorithm': 'LASSO',               'ROC-AUC': 0.8853, 'ROC-AUC SD': 0.0237},
+        {'Feature Set': 'Non-Invasive (18 features)', 'Algorithm': 'XGBoost',             'ROC-AUC': 0.8750, 'ROC-AUC SD': 0.0183},
+        {'Feature Set': 'Non-Invasive (18 features)', 'Algorithm': 'Random Forest',       'ROC-AUC': 0.8891, 'ROC-AUC SD': 0.0242},
     ]
     return pd.DataFrame(results)
 
 
 try:
-    df, X, y, numerical_cols, feature_importance, model = load_and_analyze()
+    df, X, y, all_feature_cols, feature_importance, model = load_and_analyze()
 except FileNotFoundError:
     st.error("Data Loading Error")
     st.error("Could not find the required data file: `data/processed/cleaned_data.csv`")
@@ -161,7 +179,7 @@ elif analysis_type == 'Correlation Heatmap':
 
     selected_features = st.multiselect(
         "Select features to include",
-        numerical_cols,
+        all_feature_cols,
         default=['follicle_no_r', 'follicle_no_l', 'amhng_ml', 'lh_miu_ml', 'fsh_miu_ml',
                  'bmi', 'weight_kg', 'waist_hip_ratio', 'age_yrs']
     )
@@ -181,7 +199,7 @@ elif analysis_type == 'PCOS vs Non-PCOS Distribution':
 
     selected_features = st.multiselect(
         "Select features to compare",
-        numerical_cols,
+        all_feature_cols,
         default=['follicle_no_r', 'follicle_no_l', 'amhng_ml', 'bmi', 'lh_miu_ml']
     )
 
@@ -220,76 +238,59 @@ elif analysis_type == 'PCOS vs Non-PCOS Distribution':
         st.pyplot(fig)
 
 elif analysis_type == 'Model Comparison':
-    st.markdown("### Model Comparison: Logistic Regression vs XGBoost")
+    st.markdown("### Model Comparison: All Five Models")
     st.markdown(
-        "5-fold cross-validated performance across both feature sets. "
-        "Error bars show ± 1 standard deviation across folds."
+        "5-fold stratified CV with identical splits across all models (NB07). "
+        "Error bars show ± 1 SD. All pairwise differences are non-significant (Wilcoxon signed-rank, Bonferroni-corrected)."
     )
 
-    with st.spinner("Running cross-validation (this may take a moment)..."):
-        comparison_df = run_model_comparison()
+    comparison_df = run_model_comparison()
 
-    # Summary table — SD columns: 'Accuracy SD', 'ROC-AUC SD', 'F1 SD'
-    sd_col_map = {'Accuracy': 'Accuracy SD', 'ROC-AUC': 'ROC-AUC SD', 'F1 Score': 'F1 SD'}
     display_df = comparison_df.copy()
-    for metric, sd_col in sd_col_map.items():
-        display_df[metric] = display_df.apply(
-            lambda r, m=metric, s=sd_col: f"{r[m]:.3f} ± {r[s]:.3f}", axis=1
-        )
+    display_df['AUC-ROC (mean ± SD)'] = display_df.apply(
+        lambda r: f"{r['ROC-AUC']:.4f} ± {r['ROC-AUC SD']:.3f}", axis=1
+    )
     st.dataframe(
-        display_df[['Feature Set', 'Algorithm', 'Accuracy', 'ROC-AUC', 'F1 Score']],
+        display_df[['Feature Set', 'Algorithm', 'AUC-ROC (mean ± SD)']],
         use_container_width=True,
         hide_index=True
     )
 
     st.divider()
 
-    # Bar charts for each metric
-    metrics = ['Accuracy', 'ROC-AUC', 'F1 Score']
-    fig, axes = plt.subplots(1, 3, figsize=(16, 5))
-
+    PALETTE = ['#4F86C6', '#F4A261', '#2a9d8f', '#E63946', '#8338ec']
     feature_sets = comparison_df['Feature Set'].unique()
     algorithms = comparison_df['Algorithm'].unique()
     x = np.arange(len(feature_sets))
-    width = 0.35
-    algo_colors = {'Logistic Regression': '#C2185B', 'XGBoost': '#7B1FA2'}
+    width = 0.15
+    algo_colors = dict(zip(algorithms, PALETTE))
 
-    for ax, metric in zip(axes, metrics):
-        for i, algo in enumerate(algorithms):
-            subset = comparison_df[comparison_df['Algorithm'] == algo]
-            vals = [subset[subset['Feature Set'] == fs][metric].values[0] for fs in feature_sets]
-            errs = [subset[subset['Feature Set'] == fs][sd_col_map[metric]].values[0] for fs in feature_sets]
-            bars = ax.bar(x + i * width - width / 2, vals, width,
-                          label=algo, color=algo_colors[algo], alpha=0.85,
-                          edgecolor='black', yerr=errs, capsize=5)
+    fig, ax = plt.subplots(figsize=(12, 6))
+    for i, algo in enumerate(algorithms):
+        subset = comparison_df[comparison_df['Algorithm'] == algo]
+        vals = [subset[subset['Feature Set'] == fs]['ROC-AUC'].values[0] for fs in feature_sets]
+        errs = [subset[subset['Feature Set'] == fs]['ROC-AUC SD'].values[0] for fs in feature_sets]
+        offset = (i - len(algorithms) / 2 + 0.5) * width
+        ax.bar(x + offset, vals, width, label=algo, color=algo_colors[algo],
+               alpha=0.85, edgecolor='black', yerr=errs, capsize=4)
 
-        ax.set_title(metric, fontsize=13, fontweight='bold')
-        ax.set_xticks(x)
-        ax.set_xticklabels(feature_sets, fontsize=9)
-        ax.set_ylim(0, 1.05)
-        ax.set_ylabel('Score')
-        ax.grid(axis='y', alpha=0.3, linestyle='--')
-        ax.legend(fontsize=9)
-
-        # Value labels on bars
-        for bar in ax.patches:
-            h = bar.get_height()
-            if h > 0:
-                ax.text(bar.get_x() + bar.get_width() / 2, h + 0.01,
-                        f'{h:.2f}', ha='center', va='bottom', fontsize=8, fontweight='bold')
-
-    plt.suptitle('Logistic Regression vs XGBoost — 5-Fold CV Performance',
-                 fontsize=14, fontweight='bold', y=1.02)
-    style_fig(fig, axes)
+    ax.set_title('5-Fold CV AUC-ROC — All Five Models', fontsize=13, fontweight='bold')
+    ax.set_xticks(x)
+    ax.set_xticklabels(feature_sets, fontsize=10)
+    ax.set_ylim(0.80, 1.02)
+    ax.set_ylabel('AUC-ROC')
+    ax.grid(axis='y', alpha=0.3, linestyle='--')
+    ax.legend(fontsize=9)
+    style_fig(fig, ax)
     st.pyplot(fig)
 
     st.divider()
     st.markdown("""
     **Notes:**
-    - **Full model** uses 9 features: age, BMI, weight, waist-hip ratio, follicle counts (L/R), AMH, LH, FSH
-    - **Non-invasive model** uses 17 features: vitals, symptoms, and lifestyle factors only — no blood tests or ultrasound
-    - Cross-validation uses 5 stratified folds to preserve class balance across splits
-    - XGBoost uses `scale_pos_weight` to handle the ~2:1 class imbalance (controls vs PCOS)
+    - **Full model** uses all 41 clinical features
+    - **Non-invasive model** uses 18 features: vitals, symptoms, cycle pattern, and lifestyle — no blood tests or ultrasound
+    - Cross-validation uses 5 stratified folds with the same random splits for all models to enable paired comparisons
+    - All pairwise AUC differences are non-significant after Bonferroni correction (10 comparisons per feature set)
     """)
 
 st.divider()
@@ -298,7 +299,7 @@ st.markdown("### Dataset Summary")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    st.metric("Total Features", len(numerical_cols))
+    st.metric("Total Features", len(all_feature_cols))
     st.metric("PCOS Cases", (y == 1).sum())
 
 with col2:

@@ -3,8 +3,8 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
-from xgboost import XGBClassifier
 import matplotlib.pyplot as plt
 import sys
 sys.path.append(str(Path(__file__).parent.parent))
@@ -47,45 +47,33 @@ def train_models():
                      'lh_miu_ml', 'fsh_miu_ml', 'weight_kg', 'waist_hip_ratio']
 
     noninvasive_features = ['age_yrs', 'bmi', 'weight_kg', 'waist_hip_ratio',
-                            'pulse_ratebpm', 'rr_breaths_min', 'cycle_lengthdays',
+                            'pulse_ratebpm', 'rr_breaths_min', 'cycle_r_i', 'cycle_lengthdays',
                             'bp_systolic_mmhg', 'bp_diastolic_mmhg', 'weight_gain_y_n',
                             'hair_growth_y_n', 'skin_darkening_y_n', 'hair_loss_y_n',
                             'pimples_y_n', 'fast_food_y_n', 'reg_exercise_y_n', 'pregnant_y_n']
 
     y = df['pcos_y_n']
-    scale_pos_weight = (y == 0).sum() / (y == 1).sum()
 
     models = {}
 
     for feature_set_name, features in [('full', full_features), ('noninvasive', noninvasive_features)]:
-        X = df[features].fillna(df[features].mean())
+        X = df[features].fillna(df[features].median(numeric_only=True))
         scaler = StandardScaler()
         X_scaled = scaler.fit_transform(X)
 
         logreg = LogisticRegression(random_state=42, max_iter=1000)
         logreg.fit(X_scaled, y)
 
-        # Tuned hyperparameters from notebook grid search (03-xgboost-shap.ipynb)
-        xgb = XGBClassifier(
-            random_state=42,
-            scale_pos_weight=scale_pos_weight,
-            n_estimators=100,
-            max_depth=7,
-            learning_rate=0.05,
-            subsample=0.6,
-            colsample_bytree=1.0,
-            min_child_weight=1,
-            gamma=0.1,
-            reg_alpha=0,
-            reg_lambda=2,
-            eval_metric='logloss',
-            verbosity=0
+        # Random Forest — fixed params matching NB07 controlled comparison
+        rf = RandomForestClassifier(
+            n_estimators=300, max_depth=10, min_samples_split=5,
+            class_weight='balanced', random_state=42, n_jobs=-1
         )
-        xgb.fit(X_scaled, y)
+        rf.fit(X_scaled, y)
 
         models[feature_set_name] = {
             'logreg': {'model': logreg, 'scaler': scaler, 'features': features},
-            'xgb': {'model': xgb, 'scaler': scaler, 'features': features},
+            'rf': {'model': rf, 'scaler': scaler, 'features': features},
             'stats': df[features].describe()
         }
 
@@ -105,7 +93,7 @@ except Exception as e:
 st.markdown("""
 ### How to Use
 1. **Select a feature set** — Full (includes labs & ultrasound) or Non-Invasive (symptoms & vitals only)
-2. **Select an algorithm** — Logistic Regression or XGBoost
+2. **Select an algorithm** — Logistic Regression (interpretable, well-calibrated) or Random Forest (highest sensitivity on non-invasive set)
 3. **Enter patient values** in the input fields below
 4. **View risk assessment** and contributing factors
 """)
@@ -121,7 +109,7 @@ with sel_col1:
     feature_set = st.radio("Feature Set", options=['Full Model', 'Non-Invasive Model'])
 
 with sel_col2:
-    algorithm = st.radio("Algorithm", options=['Logistic Regression', 'XGBoost'])
+    algorithm = st.radio("Algorithm", options=['Logistic Regression', 'Random Forest'])
 
 with sel_col3:
     if feature_set == 'Full Model':
@@ -136,7 +124,7 @@ with sel_col3:
         **Non-Invasive Model** uses only accessible clinical data:
         - Demographics and body measurements
         - Vital signs (pulse, respiration, blood pressure)
-        - Menstrual history, PCOS symptoms, and lifestyle factors
+        - Menstrual history (cycle regularity & length), PCOS symptoms, and lifestyle factors
         - Best for screening without blood tests or ultrasound
         """)
 
@@ -144,7 +132,7 @@ st.divider()
 
 # --- Resolve model info ---
 feature_key = 'full' if feature_set == 'Full Model' else 'noninvasive'
-algo_key = 'logreg' if algorithm == 'Logistic Regression' else 'xgb'
+algo_key = 'logreg' if algorithm == 'Logistic Regression' else 'rf'
 model_info = models_dict[feature_key][algo_key]
 model_type_label = f"{feature_set} — {algorithm}"
 
@@ -162,7 +150,10 @@ with col1:
 with col2:
     pulse = st.number_input("Pulse Rate (bpm)", min_value=40, max_value=120, value=75)
     rr = st.number_input("Respiration Rate (breaths/min)", min_value=10, max_value=40, value=16)
-    cycle = st.number_input("Cycle Length (days)", min_value=15, max_value=90, value=28)
+    cycle = st.number_input("Cycle Length (days)", min_value=0, max_value=20, value=5)
+    if feature_set == 'Non-Invasive Model':
+        cycle_irreg = st.checkbox("Irregular Cycles", value=False,
+                                  help="Irregular if cycle length value is outside 2–5; regular (2–5) reflects a normal menstrual pattern in this dataset's encoding")
     bp_sys = st.number_input("Systolic BP (mmHg)", min_value=80, max_value=180, value=120)
 
 with col3:
@@ -176,6 +167,7 @@ with col3:
         lh = st.number_input("LH (mIU/ml)", min_value=0.1, max_value=100.0, value=5.0)
         fsh = st.number_input("FSH (mIU/ml)", min_value=1.0, max_value=20.0, value=6.0)
         weight_gain = hair_growth = skin_darkening = hair_loss = pimples = fast_food = exercise = pregnant = None
+        cycle_irreg = None
     else:
         st.markdown("**PCOS Symptoms & Lifestyle**")
         weight_gain = st.checkbox("Weight Gain", value=False)
@@ -197,7 +189,7 @@ if st.button("Calculate Risk Score", use_container_width=True):
     if feature_set == 'Full Model':
         input_data = np.array([[age, bmi, follicle_r, follicle_l, amh, lh, fsh, weight, whr]])
     else:
-        input_data = np.array([[age, bmi, weight, whr, pulse, rr, cycle, bp_sys, bp_dia,
+        input_data = np.array([[age, bmi, weight, whr, pulse, rr, int(cycle_irreg), cycle, bp_sys, bp_dia,
                                 int(weight_gain), int(hair_growth), int(skin_darkening),
                                 int(hair_loss), int(pimples), int(fast_food), int(exercise), int(pregnant)]])
     input_scaled = model_info['scaler'].transform(input_data)
@@ -206,18 +198,14 @@ if st.button("Calculate Risk Score", use_container_width=True):
 
     if algo_key == 'logreg':
         contribs = model_info['model'].coef_[0] * input_scaled[0]
-        st.session_state['patient_contribs'] = pd.DataFrame({
-            'Feature': model_info['features'],
-            'Contribution': contribs,
-        }).sort_values('Contribution', key=abs, ascending=False)
-        st.session_state['shap_values'] = None
     else:
+        # RF: global importance × signed standardised input value as directionality proxy
         contribs = model_info['model'].feature_importances_ * input_scaled[0]
-        st.session_state['patient_contribs'] = pd.DataFrame({
-            'Feature': model_info['features'],
-            'Contribution': contribs,
-        }).sort_values('Contribution', key=abs, ascending=False)
-        st.session_state['shap_values'] = None
+    st.session_state['patient_contribs'] = pd.DataFrame({
+        'Feature': model_info['features'],
+        'Contribution': contribs,
+    }).sort_values('Contribution', key=abs, ascending=False)
+    st.session_state['shap_values'] = None
 
     st.session_state.pop('shap_values', None)
     st.session_state['algo_key'] = algo_key
@@ -249,9 +237,9 @@ st.markdown(f"**Model:** {model_type_label}")
 col1, col2 = st.columns(2)
 
 with col1:
-    if risk_prob < 0.25:
+    if risk_prob < 0.20:
         risk_level = "Low Risk"
-    elif risk_prob < 0.75:
+    elif risk_prob < 0.50:
         risk_level = "Medium Risk"
     else:
         risk_level = "High Risk"
@@ -262,19 +250,21 @@ with col1:
 with col2:
     fig, ax = plt.subplots(figsize=(8, 6))
 
-    low_angles = np.linspace(0, 0.25 * np.pi, 25)
-    ax.fill_between(np.cos(low_angles), 0, np.sin(low_angles), color='#00AA00', alpha=0.4, label='Low (0–25%)')
+    # Arc goes from left (angle=π, 0% risk) to right (angle=0, 100% risk)
+    low_angles = np.linspace(np.pi, 0.80 * np.pi, 20)          # leftmost 20% → green
+    ax.fill_between(np.cos(low_angles), 0, np.sin(low_angles), color='#00AA00', alpha=0.4, label='Low (0–20%)')
     ax.plot(np.cos(low_angles), np.sin(low_angles), color='#00AA00', linewidth=3)
 
-    med_angles = np.linspace(0.25 * np.pi, 0.75 * np.pi, 50)
-    ax.fill_between(np.cos(med_angles), 0, np.sin(med_angles), color='#FFAA00', alpha=0.4, label='Medium (25–75%)')
+    med_angles = np.linspace(0.80 * np.pi, 0.50 * np.pi, 30)   # middle → orange
+    ax.fill_between(np.cos(med_angles), 0, np.sin(med_angles), color='#FFAA00', alpha=0.4, label='Medium (20–50%)')
     ax.plot(np.cos(med_angles), np.sin(med_angles), color='#FFAA00', linewidth=3)
 
-    high_angles = np.linspace(0.75 * np.pi, np.pi, 25)
-    ax.fill_between(np.cos(high_angles), 0, np.sin(high_angles), color='#FF0000', alpha=0.4, label='High (75–100%)')
+    high_angles = np.linspace(0.50 * np.pi, 0, 50)              # rightmost 50% → red
+    ax.fill_between(np.cos(high_angles), 0, np.sin(high_angles), color='#FF0000', alpha=0.4, label='High (50–100%)')
     ax.plot(np.cos(high_angles), np.sin(high_angles), color='#FF0000', linewidth=3)
 
-    needle_angle = risk_prob * np.pi
+    # risk_prob=0 → angle=π (left), risk_prob=1 → angle=0 (right)
+    needle_angle = (1 - risk_prob) * np.pi
     ax.arrow(0, 0, np.cos(needle_angle) * 0.85, np.sin(needle_angle) * 0.85,
              head_width=0.08, head_length=0.08, fc='black', ec='black', linewidth=3, zorder=10)
     ax.add_patch(plt.Circle((0, 0), 0.08, color='black', zorder=11))
@@ -299,8 +289,8 @@ if _algo_key == 'logreg':
     st.markdown("*How each of this patient's values contributes to their log-odds of PCOS. "
                 "Pink bars push risk up; purple bars push risk down.*")
 else:
-    st.markdown("*Weighted deviation of this patient's values from the population average. "
-                "Pink bars push risk up; purple bars push risk down.*")
+    st.markdown("*Feature importance weighted by standardised patient values. "
+                "Pink bars indicate features above the population mean pushing risk up; purple bars indicate features below the mean.*")
 
 top_contribs = _patient_contribs.head(9)
 bar_colors = ['#C2185B' if v > 0 else '#7B1FA2' for v in top_contribs['Contribution']]
@@ -365,12 +355,12 @@ else:
     if not inp['fast_food'] and inp['exercise']:
         recommendations.append("**Good lifestyle factors**: Regular exercise and healthy diet support PCOS management")
 
-if risk_prob > 0.75:
+if risk_prob >= 0.50:
     if _feature_set == 'Full Model':
         recommendations.append("**High risk**: Recommend comprehensive PCOS evaluation by endocrinologist")
     else:
         recommendations.append("**High risk**: Non-invasive screening suggests PCOS — recommend clinical evaluation with blood tests & ultrasound")
-elif risk_prob > 0.25:
+elif risk_prob >= 0.20:
     if _feature_set == 'Full Model':
         recommendations.append("**Medium risk**: Monitor for PCOS symptoms and hormonal markers — consider repeat testing")
     else:

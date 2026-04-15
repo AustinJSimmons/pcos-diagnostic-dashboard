@@ -45,7 +45,7 @@ with col1:
     complementary tools:
 
     - **Phenotype Explorer**: Unsupervised clustering (K-Means + PCA) to identify distinct PCOS subtypes
-    - **Risk Calculator**: Logistic Regression and XGBoost models for personalized risk scoring, with both a full clinical model and a non-invasive screening model
+    - **Risk Calculator**: Logistic Regression and Random Forest models for personalized risk scoring, with both a full clinical model and a non-invasive screening model
     - **Feature Impact**: Feature importance analysis and head-to-head model comparison across algorithms and feature sets
 
     The non-invasive model is particularly relevant for low-resource or primary care settings, where
@@ -53,7 +53,7 @@ with col1:
     vitals, and lifestyle factors — enabling a first-pass screening without any invasive workup.
 
     **Dataset:** Sourced from a fertility clinic dataset, pre-processed and cleaned for analysis.
-    **Methods:** K-Means clustering, logistic regression, XGBoost with RandomizedSearchCV tuning, SHAP analysis.
+    **Methods:** K-Means clustering, Logistic Regression, Ridge, LASSO, XGBoost, Random Forest — evaluated via 5-fold stratified CV with Wilcoxon signed-rank significance testing.
     """)
 
 with col2:
@@ -84,7 +84,7 @@ with col2:
             pcos_pct = (df['pcos_y_n'] == 1).sum() / len(df) * 100
             st.metric("PCOS Prevalence", f"{pcos_pct:.1f}%")
             st.metric("Control Group", f"{(df['pcos_y_n'] == 0).sum()}")
-            st.metric("Best Model AUC", "94.7%")
+            st.metric("Best Model AUC", "96.2%")
     except:
         st.warning("Dataset not found. Please check data path.")
 
@@ -175,13 +175,13 @@ kf_col1, kf_col2, kf_col3 = st.columns(3)
 
 with kf_col1:
     st.markdown("#### Model Performance")
-    st.metric("Full Clinical AUC-ROC (XGBoost)", "94.8%")
-    st.metric("Non-Invasive AUC-ROC (XGBoost)", "88.1%")
-    st.metric("Diagnostic Cost of Removing Labs", "~7 pp gap")
+    st.metric("Full Clinical AUC-ROC (XGBoost)", "96.2%")
+    st.metric("Non-Invasive AUC-ROC (RF)", "88.9%")
+    st.metric("Diagnostic Cost of Removing Labs", "6.4–8.7 pp")
     st.markdown("""
-    The ~7 percentage-point gap between full clinical and non-invasive conditions quantifies
-    the informational cost of removing ultrasound and blood test data — a relatively modest gap,
-    suggesting symptom-based screening carries substantial predictive signal.
+    The 6.4–8.7 percentage-point gap across models quantifies the informational cost of removing
+    ultrasound and blood test data — a relatively modest gap, suggesting symptom-based screening
+    carries substantial predictive signal. All pairwise model differences are non-significant.
     """)
 
 with kf_col2:
@@ -205,8 +205,8 @@ with kf_col3:
     st.metric("Hyperandrogenic Subtype", "n = 118  |  BMI 23.7")
     st.markdown("""
     K-Means clustering (k=2) on the PCOS-positive cohort revealed two biologically distinct
-    subtypes consistent with Gao et al. (2025). Both phenotypes share similar follicle counts
-    and cycle irregularity rates — the distinguishing signal is **metabolic vs. hormonal**.
+    subtypes consistent with Gao et al. (2025). Both phenotypes share similar follicle counts —
+    the distinguishing signal is **metabolic vs. hormonal** (BMI, weight gain vs. elevated LH).
     """)
 
 st.divider()
@@ -229,7 +229,7 @@ with guide_col2:
     st.markdown("""
     #### Risk Calculator
     Calculate PCOS risk based on patient input:
-    - Choose between Logistic Regression and XGBoost
+    - Choose between Logistic Regression and Random Forest
     - Full clinical model or non-invasive screening model
     - Get personalized risk score and recommendations
     """)
@@ -240,7 +240,7 @@ with guide_col3:
     #### Feature Impact
     Visualize feature importance and compare models:
     - Feature rankings by model coefficient and mutual information
-    - Logistic Regression vs XGBoost comparison
+    - All five models compared across both feature sets
     - Full vs non-invasive feature set performance
     """)
     st.page_link("pages/3_Feature_Impact.py", label="Open Feature Impact →")
@@ -253,4 +253,4 @@ with footer_col1:
     st.markdown("**Data Source**\n\nPCOS patient dataset (541 patients, 41 features) from a fertility clinic")
 
 with footer_col2:
-    st.markdown("**Methods**\n\nK-Means clustering, Logistic Regression, XGBoost (RandomizedSearchCV), SHAP analysis")
+    st.markdown("**Methods**\n\nK-Means clustering, Logistic Regression, Ridge, LASSO, XGBoost, Random Forest")

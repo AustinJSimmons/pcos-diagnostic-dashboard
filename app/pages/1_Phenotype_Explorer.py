@@ -112,12 +112,12 @@ try:
     bmi_0 = df_pcos[clusters == 0]['bmi'].mean()
     bmi_1 = df_pcos[clusters == 1]['bmi'].mean()
     if bmi_0 > bmi_1:
-        pheno_names = {0: "Metabolic PCOS", 1: "Lean PCOS"}
+        pheno_names = {0: "Metabolic PCOS", 1: "Hyperandrogenic PCOS"}
         pheno_desc  = {0: "Higher BMI, weight & metabolic markers",
-                       1: "Lower BMI, leaner profile with similar follicle counts"}
+                       1: "Lower BMI, elevated LH, prominent androgenic symptoms"}
     else:
-        pheno_names = {0: "Lean PCOS", 1: "Metabolic PCOS"}
-        pheno_desc  = {0: "Lower BMI, leaner profile with similar follicle counts",
+        pheno_names = {0: "Hyperandrogenic PCOS", 1: "Metabolic PCOS"}
+        pheno_desc  = {0: "Lower BMI, elevated LH, prominent androgenic symptoms",
                        1: "Higher BMI, weight & metabolic markers"}
     pheno_colors_map = {0: '#E91E8C', 1: '#7B1FA2'}
 
