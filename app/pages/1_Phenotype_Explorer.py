@@ -330,8 +330,6 @@ try:
             
             if p_val < 0.05:
                 st.success("Significantly Different")
-            else:
-                st.info("No significant difference")
             
             mean_diff_pct = abs(data_p1.mean() - data_p0.mean()) / data_p0.mean() * 100
             st.metric("% Difference", f"{mean_diff_pct:.1f}%")
