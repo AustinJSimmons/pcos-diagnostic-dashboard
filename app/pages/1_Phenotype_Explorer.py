@@ -192,7 +192,7 @@ try:
                 
                 metrics_col1, metrics_col2, metrics_col3 = st.columns(3)
                 with metrics_col1:
-                    st.metric("Avg FSH (mIU/ml)", f"{pheno_data['fsh_miu_ml'].mean():.2f}")
+                    st.metric("Avg LH (mIU/ml)", f"{pheno_data['lh_miu_ml'].mean():.2f}")
                 with metrics_col2:
                     st.metric("Avg BMI", f"{pheno_data['bmi'].mean():.1f} kg/m²")
                 with metrics_col3:
