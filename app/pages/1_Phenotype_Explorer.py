@@ -353,7 +353,7 @@ try:
 
         with col2:
             c_hb    = st.number_input("Haemoglobin (g/dL)", 5.0, 18.0, 13.0, key="c_hb")
-            c_cycle = st.number_input("Cycle Length (days)", 15, 90, 30, key="c_cycle")
+            c_cycle = st.number_input("Cycle Length (days)", 0, 20, 5, key="c_cycle")
             c_fsh   = st.number_input("FSH (mIU/ml)", 0.5, 20.0, 6.0, key="c_fsh")
             c_lh    = st.number_input("LH (mIU/ml)", 0.1, 100.0, 5.0, key="c_lh")
             c_fsh_lh= st.number_input("FSH/LH ratio", 0.1, 10.0, 1.2, key="c_fshlh")
