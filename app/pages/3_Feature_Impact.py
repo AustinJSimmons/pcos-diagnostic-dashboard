@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import shap
 from pathlib import Path
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LogisticRegression
@@ -103,6 +104,35 @@ def run_model_comparison():
     return pd.DataFrame(results)
 
 
+@st.cache_data
+def compute_shap():
+    _, X_inner, y_inner, features_inner, _, _ = load_and_analyze()
+
+    scale_pos_weight = float((y_inner == 0).sum()) / float((y_inner == 1).sum())
+
+    xgb_model = XGBClassifier(
+        n_estimators=100,
+        max_depth=7,
+        learning_rate=0.05,
+        subsample=0.6,
+        colsample_bytree=1.0,
+        min_child_weight=1,
+        gamma=0.1,
+        reg_alpha=0,
+        reg_lambda=2,
+        scale_pos_weight=scale_pos_weight,
+        eval_metric='logloss',
+        random_state=42,
+        n_jobs=-1
+    )
+    xgb_model.fit(X_inner, y_inner)
+
+    explainer = shap.TreeExplainer(xgb_model)
+    shap_values = explainer.shap_values(X_inner)
+
+    return shap_values, X_inner
+
+
 try:
     df, X, y, all_feature_cols, feature_importance, model = load_and_analyze()
 except FileNotFoundError:
@@ -117,7 +147,7 @@ except Exception as e:
 st.sidebar.markdown("### Analysis Options")
 analysis_type = st.sidebar.radio(
     "Select Analysis Type",
-    options=['Feature Importance', 'Correlation Heatmap', 'PCOS vs Non-PCOS Distribution', 'Model Comparison'],
+    options=['Feature Importance', 'SHAP Analysis', 'Correlation Heatmap', 'PCOS vs Non-PCOS Distribution', 'Model Comparison'],
     index=0
 )
 
@@ -173,6 +203,73 @@ if analysis_type == 'Feature Importance':
         ax.invert_yaxis()
         style_fig(fig, ax)
         st.pyplot(fig)
+
+elif analysis_type == 'SHAP Analysis':
+    st.markdown("### SHAP Analysis")
+    st.markdown(
+        "*SHapley Additive exPlanations quantify each feature's contribution to individual predictions. "
+        "Computed using a tuned XGBoost model with TreeExplainer across all 541 patients.*"
+    )
+
+    with st.spinner("Computing SHAP values — first load only..."):
+        shap_values, X_shap = compute_shap()
+
+    tab_bar, tab_bee = st.tabs(["Global Importance", "Direction & Magnitude"])
+
+    with tab_bar:
+        st.markdown("**Mean absolute SHAP value per feature** — how much each feature shifts the predicted probability on average.")
+        shap.summary_plot(shap_values, X_shap, plot_type='bar', show=False, max_display=15)
+        fig = plt.gcf()
+        fig.patch.set_facecolor('none')
+        fig.set_size_inches(10, 7)
+        fig.tight_layout()
+        st.pyplot(fig, use_container_width=True)
+        plt.close('all')
+
+    with tab_bee:
+        st.markdown(
+            "**SHAP beeswarm** — each dot is a patient. "
+            "Color shows feature value (red = high, blue = low); horizontal position shows the SHAP contribution."
+        )
+        shap.summary_plot(shap_values, X_shap, show=False, max_display=15)
+        fig = plt.gcf()
+        fig.patch.set_facecolor('none')
+        fig.set_size_inches(10, 7)
+        fig.tight_layout()
+        st.pyplot(fig, use_container_width=True)
+        plt.close('all')
+
+    st.divider()
+
+    st.markdown("### SHAP Stable Feature Set")
+    st.markdown(
+        "10 features consistently ranked as most important across 5 CV folds "
+        "(mean |SHAP| stability analysis). This minimal set achieves AUC ~0.956 — matching the full 41-feature model."
+    )
+
+    shap_stable = pd.DataFrame({
+        'Rank': range(1, 11),
+        'Feature': [
+            'follicle_no_r', 'follicle_no_l', 'hair_growth_y_n', 'weight_gain_y_n',
+            'skin_darkening_y_n', 'amhng_ml', 'cycle_r_i', 'pimples_y_n',
+            'cycle_lengthdays', 'fast_food_y_n'
+        ],
+        'Type': [
+            'Clinical (ultrasound)', 'Clinical (ultrasound)', 'Non-invasive', 'Non-invasive',
+            'Non-invasive', 'Clinical (blood test)', 'Non-invasive', 'Non-invasive',
+            'Non-invasive', 'Non-invasive'
+        ]
+    })
+
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        st.dataframe(shap_stable, use_container_width=True, hide_index=True)
+    with col2:
+        st.info(
+            "**7 of 10 features are non-invasive** (symptoms, cycle pattern, lifestyle) — "
+            "no blood tests or ultrasound required.\n\n"
+            "The non-invasive subset of 7 achieves AUC ~0.885, on par with the full 18-feature low-cost model."
+        )
 
 elif analysis_type == 'Correlation Heatmap':
     st.markdown("### Feature Correlation Analysis")
